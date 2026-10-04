@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Stats = game:GetService("Stats")
+local UIS = game:GetService("UserInputService")
 local lp = Players.LocalPlayer
 
 local gui = Instance.new("ScreenGui")
@@ -9,36 +10,53 @@ gui.Name = "TentixWare"
 gui.ResetOnSpawn = false
 gui.Parent = gethui and gethui() or lp.PlayerGui
 
--- Подвижная полоска
+-- Водяная анимация через UIGradient
+local function makeWaterGrad(parent)
+    local grad = Instance.new("UIGradient")
+    grad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(10,10,16)),
+        ColorSequenceKeypoint.new(0.4, Color3.fromRGB(18,20,28)),
+        ColorSequenceKeypoint.new(0.7, Color3.fromRGB(14,16,22)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(10,10,16)),
+    })
+    grad.Rotation = 135
+    grad.Parent = parent
+    -- Анимация сдвига
+    local t = 0
+    RunService.Heartbeat:Connect(function(dt)
+        t += dt * 0.3
+        grad.Offset = Vector2.new(math.sin(t)*0.4, math.cos(t*0.7)*0.2)
+    end)
+    return grad
+end
+
+-- ПОЛОСКА
 local strip = Instance.new("Frame")
-strip.Size = UDim2.new(0, 210, 0, 34)
-strip.Position = UDim2.new(0, 10, 0, 10)
-strip.BackgroundColor3 = Color3.fromRGB(255,255,255)
-strip.BackgroundTransparency = 0.94
+strip.Size = UDim2.new(0,208,0,32)
+strip.Position = UDim2.new(0,10,0,10)
+strip.BackgroundColor3 = Color3.fromRGB(11,11,17)
 strip.BorderSizePixel = 0
 strip.ZIndex = 20
 strip.Active = true
-strip.Draggable = true
 strip.Parent = gui
-Instance.new("UICorner", strip).CornerRadius = UDim.new(1,0)
+Instance.new("UICorner",strip).CornerRadius = UDim.new(1,0)
+makeWaterGrad(strip)
 local ss = Instance.new("UIStroke",strip)
 ss.Color = Color3.fromRGB(255,255,255)
-ss.Transparency = 0.88
-ss.Thickness = 0.5
+ss.Transparency = 0.9
 
 -- Лого
 local logo = Instance.new("Frame")
 logo.Size = UDim2.new(0,24,0,24)
-logo.Position = UDim2.new(0,5,0.5,-12)
-logo.BackgroundColor3 = Color3.fromRGB(139,92,246)
-logo.BackgroundTransparency = 0.78
+logo.Position = UDim2.new(0,4,0.5,-12)
+logo.BackgroundColor3 = Color3.fromRGB(13,13,20)
 logo.BorderSizePixel = 0
 logo.ZIndex = 21
 logo.Parent = strip
 Instance.new("UICorner",logo).CornerRadius = UDim.new(1,0)
-local logoS = Instance.new("UIStroke",logo)
-logoS.Color = Color3.fromRGB(139,92,246)
-logoS.Transparency = 0.6
+local ls = Instance.new("UIStroke",logo)
+ls.Color = Color3.fromRGB(255,255,255)
+ls.Transparency = 0.88
 
 local logoT = Instance.new("TextLabel")
 logoT.Size = UDim2.new(1,0,1,0)
@@ -51,216 +69,205 @@ logoT.Parent = logo
 
 -- Название
 local nameL = Instance.new("TextLabel")
-nameL.Size = UDim2.new(0,75,1,0)
-nameL.Position = UDim2.new(0,34,0,0)
+nameL.Size = UDim2.new(0,72,1,0)
+nameL.Position = UDim2.new(0,33,0,0)
 nameL.BackgroundTransparency = 1
 nameL.Text = "TentixWare"
-nameL.TextColor3 = Color3.fromRGB(245,242,255)
-nameL.TextTransparency = 0.08
+nameL.TextColor3 = Color3.fromRGB(228,225,245)
+nameL.TextTransparency = 0.12
 nameL.TextSize = 11
 nameL.Font = Enum.Font.GothamBold
 nameL.TextXAlignment = Enum.TextXAlignment.Left
 nameL.ZIndex = 21
 nameL.Parent = strip
 
--- Версия-бейдж
+-- Версия
 local verBg = Instance.new("Frame")
-verBg.Size = UDim2.new(0,44,0,16)
-verBg.Position = UDim2.new(0,110,0.5,-8)
-verBg.BackgroundColor3 = Color3.fromRGB(139,92,246)
-verBg.BackgroundTransparency = 0.88
+verBg.Size = UDim2.new(0,62,0,16)
+verBg.Position = UDim2.new(0,106,0.5,-8)
+verBg.BackgroundColor3 = Color3.fromRGB(255,255,255)
+verBg.BackgroundTransparency = 0.95
 verBg.BorderSizePixel = 0
 verBg.ZIndex = 21
 verBg.Parent = strip
 Instance.new("UICorner",verBg).CornerRadius = UDim.new(1,0)
-local verS2 = Instance.new("UIStroke",verBg)
-verS2.Color = Color3.fromRGB(139,92,246)
-verS2.Transparency = 0.75
+local vs = Instance.new("UIStroke",verBg)
+vs.Color = Color3.fromRGB(255,255,255)
+vs.Transparency = 0.91
 
-local verL = Instance.new("TextLabel")
-verL.Size = UDim2.new(1,0,1,0)
-verL.BackgroundTransparency = 1
-verL.Text = "v0.1 α"
-verL.TextColor3 = Color3.fromRGB(167,139,250)
-verL.TextSize = 9
-verL.Font = Enum.Font.GothamBold
-verL.ZIndex = 22
-verL.Parent = verBg
+local verT = Instance.new("TextLabel")
+verT.Size = UDim2.new(1,0,1,0)
+verT.BackgroundTransparency = 1
+verT.Text = "v: 0.1 Alpha"
+verT.TextColor3 = Color3.fromRGB(255,255,255)
+verT.TextTransparency = 0.62
+verT.TextSize = 8.5
+verT.Font = Enum.Font.GothamBold
+verT.ZIndex = 22
+verT.Parent = verBg
 
 -- Разделитель
-local div1 = Instance.new("Frame")
-div1.Size = UDim2.new(0,1,0,13)
-div1.Position = UDim2.new(0,158,0.5,-6)
-div1.BackgroundColor3 = Color3.fromRGB(255,255,255)
-div1.BackgroundTransparency = 0.9
-div1.BorderSizePixel = 0
-div1.ZIndex = 21
-div1.Parent = strip
+local function makeDivider(x)
+    local d = Instance.new("Frame")
+    d.Size = UDim2.new(0,1,0,12)
+    d.Position = UDim2.new(0,x,0.5,-6)
+    d.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    d.BackgroundTransparency = 0.92
+    d.BorderSizePixel = 0
+    d.ZIndex = 21
+    d.Parent = strip
+    return d
+end
+makeDivider(172)
 
 -- Пинг
 local pingL = Instance.new("TextLabel")
-pingL.Size = UDim2.new(0,28,1,0)
-pingL.Position = UDim2.new(0,163,0,0)
+pingL.Size = UDim2.new(0,30,1,0)
+pingL.Position = UDim2.new(0,175,0,0)
 pingL.BackgroundTransparency = 1
 pingL.Text = "--"
-pingL.TextColor3 = Color3.fromRGB(52,211,153)
+pingL.TextColor3 = Color3.fromRGB(94,234,212)
 pingL.TextSize = 10
 pingL.Font = Enum.Font.GothamBold
 pingL.TextXAlignment = Enum.TextXAlignment.Left
 pingL.ZIndex = 21
 pingL.Parent = strip
 
--- Разделитель 2
-local div2 = Instance.new("Frame")
-div2.Size = UDim2.new(0,1,0,13)
-div2.Position = UDim2.new(0,183,0.5,-6)
-div2.BackgroundColor3 = Color3.fromRGB(255,255,255)
-div2.BackgroundTransparency = 0.9
-div2.BorderSizePixel = 0
-div2.ZIndex = 21
-div2.Parent = strip
-
--- FPS
-local fpsL = Instance.new("TextLabel")
-fpsL.Size = UDim2.new(0,26,1,0)
-fpsL.Position = UDim2.new(0,186,0,0)
-fpsL.BackgroundTransparency = 1
-fpsL.Text = "--"
-fpsL.TextColor3 = Color3.fromRGB(96,165,250)
-fpsL.TextSize = 10
-fpsL.Font = Enum.Font.GothamBold
-fpsL.TextXAlignment = Enum.TextXAlignment.Left
-fpsL.ZIndex = 21
-fpsL.Parent = strip
-
--- Панель (по центру)
+-- ПАНЕЛЬ (центр экрана)
 local panel = Instance.new("Frame")
-panel.Size = UDim2.new(0,300,0,320)
-panel.Position = UDim2.new(0.5,-150,0.5,-160)
-panel.BackgroundColor3 = Color3.fromRGB(16,16,24)
-panel.BackgroundTransparency = 0.04
+panel.Size = UDim2.new(0,290,0,300)
+panel.Position = UDim2.new(0.5,-145,0.5,-150)
+panel.BackgroundColor3 = Color3.fromRGB(11,11,17)
 panel.BorderSizePixel = 0
 panel.ZIndex = 15
 panel.Visible = false
 panel.Active = true
 panel.Draggable = true
 panel.Parent = gui
-Instance.new("UICorner",panel).CornerRadius = UDim.new(0,24)
-local ps = Instance.new("UIStroke",panel)
-ps.Color = Color3.fromRGB(255,255,255)
-ps.Transparency = 0.9
+Instance.new("UICorner",panel).CornerRadius = UDim.new(0,22)
+makeWaterGrad(panel)
+local ps2 = Instance.new("UIStroke",panel)
+ps2.Color = Color3.fromRGB(255,255,255)
+ps2.Transparency = 0.91
 
 -- Шапка панели
 local ph = Instance.new("Frame")
-ph.Size = UDim2.new(1,0,0,52)
+ph.Size = UDim2.new(1,0,0,50)
 ph.BackgroundTransparency = 1
 ph.BorderSizePixel = 0
 ph.ZIndex = 16
 ph.Parent = panel
 
-local phIcon = Instance.new("Frame")
-phIcon.Size = UDim2.new(0,32,0,32)
-phIcon.Position = UDim2.new(0,14,0.5,-16)
-phIcon.BackgroundColor3 = Color3.fromRGB(139,92,246)
-phIcon.BackgroundTransparency = 0.82
-phIcon.BorderSizePixel = 0
-phIcon.ZIndex = 17
-phIcon.Parent = ph
-Instance.new("UICorner",phIcon).CornerRadius = UDim.new(0,10)
+local phIc = Instance.new("Frame")
+phIc.Size = UDim2.new(0,30,0,30)
+phIc.Position = UDim2.new(0,12,0.5,-15)
+phIc.BackgroundColor3 = Color3.fromRGB(13,13,20)
+phIc.BorderSizePixel = 0
+phIc.ZIndex = 17
+phIc.Parent = ph
+Instance.new("UICorner",phIc).CornerRadius = UDim.new(0,10)
+local piS = Instance.new("UIStroke",phIc)
+piS.Color = Color3.fromRGB(255,255,255)
+piS.Transparency = 0.88
 
-local phIconT = Instance.new("TextLabel")
-phIconT.Size = UDim2.new(1,0,1,0)
-phIconT.BackgroundTransparency = 1
-phIconT.Text = "⚡"
-phIconT.TextSize = 14
-phIconT.Font = Enum.Font.Gotham
-phIconT.ZIndex = 18
-phIconT.Parent = phIcon
+local phIcT = Instance.new("TextLabel")
+phIcT.Size = UDim2.new(1,0,1,0)
+phIcT.BackgroundTransparency = 1
+phIcT.Text = "⚡"
+phIcT.TextSize = 13
+phIcT.Font = Enum.Font.Gotham
+phIcT.ZIndex = 18
+phIcT.Parent = phIc
 
 local phTitle = Instance.new("TextLabel")
-phTitle.Size = UDim2.new(0,120,0,20)
-phTitle.Position = UDim2.new(0,52,0,8)
+phTitle.Size = UDim2.new(0,130,0,18)
+phTitle.Position = UDim2.new(0,48,0,8)
 phTitle.BackgroundTransparency = 1
 phTitle.Text = "TentixWare"
-phTitle.TextColor3 = Color3.fromRGB(245,242,255)
-phTitle.TextTransparency = 0.08
-phTitle.TextSize = 13
+phTitle.TextColor3 = Color3.fromRGB(228,225,245)
+phTitle.TextTransparency = 0.1
+phTitle.TextSize = 12
 phTitle.Font = Enum.Font.GothamBold
 phTitle.TextXAlignment = Enum.TextXAlignment.Left
 phTitle.ZIndex = 17
 phTitle.Parent = ph
 
 local phSub = Instance.new("TextLabel")
-phSub.Size = UDim2.new(0,140,0,14)
-phSub.Position = UDim2.new(0,52,0,28)
+phSub.Size = UDim2.new(0,160,0,14)
+phSub.Position = UDim2.new(0,48,0,26)
 phSub.BackgroundTransparency = 1
-phSub.Text = "v0.1 Alpha · injected"
+phSub.Text = "v: 0.1 Alpha · injected"
 phSub.TextColor3 = Color3.fromRGB(255,255,255)
-phSub.TextTransparency = 0.7
-phSub.TextSize = 10
+phSub.TextTransparency = 0.72
+phSub.TextSize = 9
 phSub.Font = Enum.Font.Gotham
 phSub.TextXAlignment = Enum.TextXAlignment.Left
 phSub.ZIndex = 17
 phSub.Parent = ph
 
--- Кнопка X
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0,26,0,26)
-closeBtn.Position = UDim2.new(1,-40,0.5,-13)
-closeBtn.BackgroundColor3 = Color3.fromRGB(255,255,255)
-closeBtn.BackgroundTransparency = 0.93
-closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
-closeBtn.TextTransparency = 0.5
-closeBtn.Text = "✕"
-closeBtn.TextSize = 11
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.BorderSizePixel = 0
-closeBtn.ZIndex = 17
-closeBtn.Parent = ph
-Instance.new("UICorner",closeBtn).CornerRadius = UDim.new(1,0)
+local xBtn = Instance.new("TextButton")
+xBtn.Size = UDim2.new(0,24,0,24)
+xBtn.Position = UDim2.new(1,-36,0.5,-12)
+xBtn.BackgroundColor3 = Color3.fromRGB(255,255,255)
+xBtn.BackgroundTransparency = 0.94
+xBtn.TextColor3 = Color3.fromRGB(255,255,255)
+xBtn.TextTransparency = 0.55
+xBtn.Text = "✕"
+xBtn.TextSize = 11
+xBtn.Font = Enum.Font.GothamBold
+xBtn.BorderSizePixel = 0
+xBtn.ZIndex = 17
+xBtn.Parent = ph
+Instance.new("UICorner",xBtn).CornerRadius = UDim.new(1,0)
 
 -- Разделитель панели
-local pdiv = Instance.new("Frame")
-pdiv.Size = UDim2.new(1,-28,0,1)
-pdiv.Position = UDim2.new(0,14,0,52)
-pdiv.BackgroundColor3 = Color3.fromRGB(255,255,255)
-pdiv.BackgroundTransparency = 0.94
-pdiv.BorderSizePixel = 0
-pdiv.ZIndex = 16
-pdiv.Parent = panel
+local function makePanelDiv(y)
+    local d = Instance.new("Frame")
+    d.Size = UDim2.new(1,-24,0,1)
+    d.Position = UDim2.new(0,12,0,y)
+    d.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    d.BackgroundTransparency = 0.94
+    d.BorderSizePixel = 0
+    d.ZIndex = 16
+    d.Parent = panel
+end
+makePanelDiv(50)
 
 -- Стат-ячейки
-local function makeStatCell(pos, label, startVal, col)
+local function makeCell(xPos, label, col)
     local cell = Instance.new("Frame")
-    cell.Size = UDim2.new(0,126,0,70)
-    cell.Position = pos
+    cell.Size = UDim2.new(0.5,-16,0,68)
+    cell.Position = UDim2.new(xPos,0,0,60)
     cell.BackgroundColor3 = Color3.fromRGB(255,255,255)
     cell.BackgroundTransparency = 0.97
     cell.BorderSizePixel = 0
     cell.ZIndex = 16
     cell.Parent = panel
     Instance.new("UICorner",cell).CornerRadius = UDim.new(0,14)
+    local cs = Instance.new("UIStroke",cell)
+    cs.Color = Color3.fromRGB(255,255,255)
+    cs.Transparency = 0.93
 
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1,-10,0,14)
-    lbl.Position = UDim2.new(0,12,0,10)
+    lbl.Position = UDim2.new(0,10,0,9)
     lbl.BackgroundTransparency = 1
     lbl.Text = label
     lbl.TextColor3 = Color3.fromRGB(255,255,255)
-    lbl.TextTransparency = 0.72
-    lbl.TextSize = 9
+    lbl.TextTransparency = 0.78
+    lbl.TextSize = 8.5
     lbl.Font = Enum.Font.GothamBold
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.ZIndex = 17
     lbl.Parent = cell
 
     local val = Instance.new("TextLabel")
-    val.Size = UDim2.new(1,-10,0,36)
-    val.Position = UDim2.new(0,12,0,26)
+    val.Size = UDim2.new(1,-10,0,34)
+    val.Position = UDim2.new(0,10,0,24)
     val.BackgroundTransparency = 1
-    val.Text = startVal
+    val.Text = "--"
     val.TextColor3 = col
-    val.TextSize = 28
+    val.TextSize = 26
     val.Font = Enum.Font.GothamBold
     val.TextXAlignment = Enum.TextXAlignment.Left
     val.ZIndex = 17
@@ -268,74 +275,114 @@ local function makeStatCell(pos, label, startVal, col)
     return val
 end
 
-local pingVal = makeStatCell(UDim2.new(0,14,0,62), "PING", "--", Color3.fromRGB(52,211,153))
-local fpsVal = makeStatCell(UDim2.new(0,160,0,62), "FPS", "--", Color3.fromRGB(96,165,250))
+local pingVal = makeCell(0,   "PING", Color3.fromRGB(94,234,212))
+local fpsVal  = makeCell(0.5, "FPS",  Color3.fromRGB(147,197,253))
+pingVal.Parent.Position = UDim2.new(0,12,0,60)
+fpsVal.Parent.Position  = UDim2.new(0.5,4,0,60)
+
+makePanelDiv(140)
 
 -- Пустое тело
 local emptyL = Instance.new("TextLabel")
-emptyL.Size = UDim2.new(1,-28,0,30)
-emptyL.Position = UDim2.new(0,14,0,148)
+emptyL.Size = UDim2.new(1,-24,0,60)
+emptyL.Position = UDim2.new(0,12,0,150)
 emptyL.BackgroundTransparency = 1
 emptyL.Text = "— функции появятся здесь —"
 emptyL.TextColor3 = Color3.fromRGB(255,255,255)
-emptyL.TextTransparency = 0.86
-emptyL.TextSize = 11
+emptyL.TextTransparency = 0.87
+emptyL.TextSize = 10
 emptyL.Font = Enum.Font.Gotham
 emptyL.ZIndex = 16
 emptyL.Parent = panel
 
--- Футер
-local footDiv = Instance.new("Frame")
-footDiv.Size = UDim2.new(1,-28,0,1)
-footDiv.Position = UDim2.new(0,14,1,-38)
-footDiv.BackgroundColor3 = Color3.fromRGB(255,255,255)
-footDiv.BackgroundTransparency = 0.94
-footDiv.BorderSizePixel = 0
-footDiv.ZIndex = 16
-footDiv.Parent = panel
+makePanelDiv(260)
 
+-- Статус футер
 local statusL = Instance.new("TextLabel")
 statusL.Size = UDim2.new(0.5,0,0,28)
-statusL.Position = UDim2.new(0,14,1,-32)
+statusL.Position = UDim2.new(0,12,1,-32)
 statusL.BackgroundTransparency = 1
 statusL.Text = "● активен"
-statusL.TextColor3 = Color3.fromRGB(52,211,153)
-statusL.TextTransparency = 0.2
-statusL.TextSize = 10
+statusL.TextColor3 = Color3.fromRGB(94,234,212)
+statusL.TextTransparency = 0.25
+statusL.TextSize = 9.5
 statusL.Font = Enum.Font.Gotham
 statusL.TextXAlignment = Enum.TextXAlignment.Left
 statusL.ZIndex = 17
 statusL.Parent = panel
 
 local buildL = Instance.new("TextLabel")
-buildL.Size = UDim2.new(0.5,0,0,28)
-buildL.Position = UDim2.new(0.5,-14,1,-32)
+buildL.Size = UDim2.new(0.5,-12,0,28)
+buildL.Position = UDim2.new(0.5,0,1,-32)
 buildL.BackgroundTransparency = 1
 buildL.Text = "build 001"
 buildL.TextColor3 = Color3.fromRGB(255,255,255)
-buildL.TextTransparency = 0.82
-buildL.TextSize = 10
+buildL.TextTransparency = 0.85
+buildL.TextSize = 9.5
 buildL.Font = Enum.Font.Gotham
 buildL.TextXAlignment = Enum.TextXAlignment.Right
 buildL.ZIndex = 17
 buildL.Parent = panel
 
--- Открытие/закрытие
+-- ЛОГИКА: тап vs перетаскивание
 local isOpen = false
-strip.InputBegan:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.MouseButton1
-    or i.UserInputType == Enum.UserInputType.Touch then
-        isOpen = not isOpen
-        panel.Visible = isOpen
+local dragStart = nil
+local startPos = nil
+local DRAG_THRESHOLD = 6
+
+local function openPanel() isOpen = true; panel.Visible = true end
+local function closePanel() isOpen = false; panel.Visible = false end
+
+xBtn.MouseButton1Click:Connect(closePanel)
+
+strip.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragStart = tick()
+        startPos = input.Position
     end
 end)
-closeBtn.MouseButton1Click:Connect(function()
-    isOpen = false; panel.Visible = false
+
+strip.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        if not startPos then return end
+        local delta = (input.Position - startPos).Magnitude
+        if delta < DRAG_THRESHOLD then
+            if isOpen then closePanel() else openPanel() end
+        end
+        startPos = nil
+    end
 end)
 
--- Обновление
+-- Обновление FPS и пинга
 local frames, elapsed = 0, 0
 RunService.Heartbeat:Connect(function(dt)
+    frames += 1; elapsed += dt
+    if elapsed >= 0.7 then
+        local fps = math.floor(frames / elapsed)
+        fpsVal.Text = fps
+        fpsL2 = fps
+        local fc = fps >= 55 and Color3.fromRGB(147,197,253)
+            or fps >= 30 and Color3.fromRGB(251,191,36)
+            or Color3.fromRGB(248,113,113)
+        fpsVal.TextColor3 = fc
+
+        local ok, ping = pcall(function()
+            return math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+        end)
+        if ok then
+            pingL.Text = ping.."ms"
+            pingVal.Text = ping
+            local pc = ping < 60 and Color3.fromRGB(94,234,212)
+                or ping < 100 and Color3.fromRGB(251,191,36)
+                or Color3.fromRGB(248,113,113)
+            pingL.TextColor3 = pc
+            pingVal.TextColor3 = pc
+        end
+        frames = 0; elapsed = 0
+    end
+end)tbeat:Connect(function(dt)
     frames += 1; elapsed += dt
     if elapsed >= 0.6 then
         local fps = math.floor(frames / elapsed)
