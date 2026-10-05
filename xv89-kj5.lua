@@ -1,517 +1,518 @@
-й--============================================================
--- TENTIXWARE HUD
--- Roblox LocalScript
--- Place: StarterPlayer > StarterPlayerScripts
---
--- PC:
---   RightShift = Open / Close
---
--- Mobile:
---   Touch the center Open Core
---   Lock button can be dragged
---
--- Flow:
---   LOCK -> UNLOCK -> OPEN CORE -> GUI
---============================================================
-
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
+-- TentixWare HUD | Roblox Lua (Delta / executors)
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
+local Stats = game:GetService("Stats")
 
-local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
+local parent = (gethui and gethui()) or game:GetService("CoreGui")
 
---============================================================
--- CLEAN OLD VERSION
---============================================================
+local gui = Instance.new("ScreenGui")
+gui.Name = "TentixWareHUD"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = parent
 
-local oldGui = PlayerGui:FindFirstChild("TentixWareHUD")
+local unlocked = false
+local guiOpen = false
 
-if oldGui then
-	oldGui:Destroy()
+local function tween(obj, info, props)
+	TweenService:Create(obj, info, props):Play()
 end
+local smooth = TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
-local oldBlur = Lighting:FindFirstChild("TentixWareBlur")
+-- ================= LOCK BUTTON =================
+local lockButton = Instance.new("TextButton")
+lockButton.Size = UDim2.fromOffset(46, 46)
+lockButton.Position = UDim2.new(0.5, 260, 0.5, -23)
+lockButton.BackgroundColor3 = Color3.fromRGB(110, 110, 110)
+lockButton.Text = "🔒"
+lockButton.TextSize = 22
+lockButton.Font = Enum.Font.GothamBold
+lockButton.TextColor3 = Color3.fromRGB(232, 232, 232)
+lockButton.AutoButtonColor = false
+lockButton.Parent = gui
+Instance.new("UICorner", lockButton).CornerRadius = UDim.new(1, 0)
 
-if oldBlur then
-	oldBlur:Destroy()
-end
-
---============================================================
--- COLORS
---============================================================
-
-local COLOR = {
-	Black = Color3.fromRGB(9, 9, 9),
-
-	BackgroundTop = Color3.fromRGB(56, 56, 56),
-	BackgroundMid = Color3.fromRGB(32, 32, 32),
-	BackgroundBottom = Color3.fromRGB(8, 8, 8),
-
-	BarTop = Color3.fromRGB(116, 116, 116),
-	BarBottom = Color3.fromRGB(83, 83, 83),
-
-	CoreTop = Color3.fromRGB(153, 153, 153),
-	CoreMid = Color3.fromRGB(116, 116, 116),
-	CoreBottom = Color3.fromRGB(85, 85, 85),
-
-	PanelTop = Color3.fromRGB(37, 37, 37),
-	PanelBottom = Color3.fromRGB(17, 17, 17),
-
-	WindowTop = Color3.fromRGB(34, 34, 34),
-	WindowBottom = Color3.fromRGB(13, 13, 13),
-
-	Module = Color3.fromRGB(31, 31, 31),
-
-	White = Color3.fromRGB(238, 238, 238),
-	Light = Color3.fromRGB(221, 221, 221),
-
-	Grey = Color3.fromRGB(160, 160, 160),
-	DarkGrey = Color3.fromRGB(119, 119, 119),
-
-	AccentGrey = Color3.fromRGB(102, 102, 102),
-	AccentGrey2 = Color3.fromRGB(75, 75, 75),
-
-	Slider = Color3.fromRGB(56, 56, 56),
-	SliderKnob = Color3.fromRGB(170, 170, 170)
-}
-
---============================================================
--- TWEEN INFOS
---============================================================
-
-local T_FAST = TweenInfo.new(
-	0.2,
-	Enum.EasingStyle.Quad,
-	Enum.EasingDirection.Out
-)
-
-local T_MEDIUM = TweenInfo.new(
-	0.4,
-	Enum.EasingStyle.Quart,
-	Enum.EasingDirection.Out
-)
-
-local T_SMOOTH = TweenInfo.new(
-	0.55,
-	Enum.EasingStyle.Quart,
-	Enum.EasingDirection.Out
-)
-
-local T_SLOW = TweenInfo.new(
-	0.7,
-	Enum.EasingStyle.Quart,
-	Enum.EasingDirection.Out
-)
-
---============================================================
--- HELPERS
---============================================================
-
-local function Create(className, properties, parent)
-	local object = Instance.new(className)
-
-	for property, value in pairs(properties or {}) do
-		object[property] = value
+local dragging, moved, dragStart, startPos
+lockButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+		dragging, moved = true, false
+		dragStart = input.Position
+		startPos = lockButton.Position
 	end
-
-	object.Parent = parent
-
-	return object
-end
-
-local function AddCorner(parent, radius)
-	return Create("UICorner", {
-		CornerRadius = UDim.new(0, radius)
-	}, parent)
-end
-
-local function AddStroke(parent, color, transparency, thickness)
-	return Create("UIStroke", {
-		Color = color,
-		Transparency = transparency,
-		Thickness = thickness or 1
-	}, parent)
-end
-
-local function Tween(object, info, properties)
-	local tween = TweenService:Create(
-		object,
-		info,
-		properties
-	)
-
-	tween:Play()
-
-	return tween
-end
-
---============================================================
--- SCREEN GUI
---============================================================
-
-local ScreenGui = Create("ScreenGui", {
-	Name = "TentixWareHUD",
-
-	ResetOnSpawn = false,
-
-	IgnoreGuiInset = true,
-
-	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-
-	DisplayOrder = 999,
-
-	ScreenInsets = Enum.ScreenInsets.None
-}, PlayerGui)
-
---============================================================
--- RESPONSIVE SCALE
---============================================================
-
-local UIScale = Create("UIScale", {
-	Scale = 1
-}, ScreenGui)
-
-local function UpdateScale()
-	local camera = workspace.CurrentCamera
-
-	if not camera then
-		return
+end)
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+	or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		if delta.Magnitude > 6 then moved = true end
+		if moved then
+			lockButton.Position = UDim2.new(0, startPos.X.Offset + delta.X,
+				0, startPos.Y.Offset + delta.Y)
+		end
 	end
-
-	local viewport = camera.ViewportSize
-
-	local baseWidth = 560
-	local baseHeight = 500
-
-	local scaleX = viewport.X / baseWidth
-	local scaleY = viewport.Y / baseHeight
-
-	local scale = math.min(scaleX, scaleY)
-
-	scale = math.clamp(
-		scale,
-		0.55,
-		1
-	)
-
-	UIScale.Scale = scale
-end
-
-task.spawn(function()
-	while ScreenGui.Parent do
-		UpdateScale()
-		task.wait(0.5)
+end)
+lockButton.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+		local wasMoved = moved
+		dragging = false
+		if not wasMoved then
+			unlocked = true
+			tween(lockButton, smooth, {BackgroundTransparency = 1, TextTransparency = 1})
+			task.delay(0.5, function() lockButton.Visible = false end)
+			tween(openCore, smooth, {BackgroundTransparency = 0, TextTransparency = 0})
+			openCore.Active = true
+		end
 	end
 end)
 
---============================================================
--- BACKGROUND
---============================================================
-
-local Background = Create("Frame", {
-	Name = "GameBackground",
-
-	Position = UDim2.fromScale(0, 0),
-
-	Size = UDim2.fromScale(1, 1),
-
-	BackgroundColor3 = COLOR.BackgroundBottom,
-
-	BorderSizePixel = 0,
-
-	ZIndex = 1
-}, ScreenGui)
-
--- radial-like layered background
-local BackgroundGlow = Create("Frame", {
-	AnchorPoint = Vector2.new(0.5, 0.5),
-
-	Position = UDim2.fromScale(0.5, 0.45),
-
-	Size = UDim2.fromScale(1.4, 1.4),
-
-	BackgroundColor3 = COLOR.BackgroundTop,
-
-	BackgroundTransparency = 0.2,
-
-	BorderSizePixel = 0,
-
-	ZIndex = 1
-}, Background)
-
-AddCorner(BackgroundGlow, 999)
-
---============================================================
--- OVERLAY
---============================================================
-
-local Overlay = Create("Frame", {
-	Name = "Overlay",
-
-	Position = UDim2.fromScale(0, 0),
-
-	Size = UDim2.fromScale(1, 1),
-
-	BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-
-	BackgroundTransparency = 1,
-
-	BorderSizePixel = 0,
-
-	ZIndex = 30,
-
-	Visible = true
-}, ScreenGui)
-
---============================================================
--- BLUR
---============================================================
-
-local Blur = Create("BlurEffect", {
-	Name = "TentixWareBlur",
-
-	Size = 0
-}, Lighting)
-
---============================================================
--- HUD SYSTEM
---============================================================
-
-local HudSystem = Create("Frame", {
-	Name = "HudSystem",
-
-	AnchorPoint = Vector2.new(0.5, 0.5),
-
-	Position = UDim2.fromScale(0.5, 0.5),
-
-	Size = UDim2.fromOffset(560, 500),
-
-	BackgroundTransparency = 1,
-
-	BorderSizePixel = 0,
-
-	ZIndex = 40
-}, ScreenGui)
-
---============================================================
--- HUD
---============================================================
-
-local Hud = Create("Frame", {
-	Name = "HUD",
-
-	Position = UDim2.fromOffset(0, 0),
-
-	Size = UDim2.new(1, 0, 0, 50),
-
-	BackgroundTransparency = 1,
-
-	BorderSizePixel = 0,
-
-	ZIndex = 41
-}, HudSystem)
-
---============================================================
--- BARS
---============================================================
-
-local Bars = Create("Frame", {
-	Name = "Bars",
-
-	AnchorPoint = Vector2.new(0.5, 0.5),
-
-	Position = UDim2.fromScale(0.5, 0.5),
-
-	Size = UDim2.fromOffset(0, 46),
-
-	BackgroundTransparency = 1,
-
-	BorderSizePixel = 0,
-
-	ZIndex = 41
-}, Hud)
-
--- LEFT BAR
-
-local LeftBar = Create("Frame", {
-	Name = "Left",
-
-	Position = UDim2.fromScale(0, 0),
-
-	Size = UDim2.fromScale(0.5, 1),
-
-	BackgroundColor3 = COLOR.BarTop,
-
-	BorderSizePixel = 0,
-
-	BackgroundTransparency = 1,
-
-	ZIndex = 41
-}, Bars)
-
-AddCorner(LeftBar, 23)
-
-local LeftGradient = Create("UIGradient", {
-	Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, COLOR.BarTop),
-		ColorSequenceKeypoint.new(1, COLOR.BarBottom)
-	}),
-
-	Rotation = 90
-}, LeftBar)
-
-local LeftCover = Create("Frame", {
-	AnchorPoint = Vector2.new(1, 0.5),
-
-	Position = UDim2.fromScale(1, 0.5),
-
-	Size = UDim2.new(0, 0, 1, 0),
-
-	BackgroundColor3 = COLOR.BarBottom,
-
-	BorderSizePixel = 0,
-
-	BackgroundTransparency = 1,
-
-	ZIndex = 42
-}, LeftBar)
-
--- RIGHT BAR
-
-local RightBar = Create("Frame", {
-	Name = "Right",
-
-	Position = UDim2.fromScale(0.5, 0),
-
-	Size = UDim2.fromScale(0.5, 1),
-
-	BackgroundColor3 = COLOR.BarTop,
-
-	BorderSizePixel = 0,
-
-	BackgroundTransparency = 1,
-
-	ZIndex = 41
-}, Bars)
-
-AddCorner(RightBar, 23)
-
-Create("UIGradient", {
-	Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, COLOR.BarTop),
-		ColorSequenceKeypoint.new(1, COLOR.BarBottom)
-	}),
-
-	Rotation = 90
-}, RightBar)
-
---============================================================
--- FPS
---============================================================
-
-local FPSHolder = Create("Frame", {
-	AnchorPoint = Vector2.new(1, 0.5),
-
-	Position = UDim2.new(1, -44, 0.5, 0),
-
-	Size = UDim2.fromOffset(75, 22),
-
-	BackgroundTransparency = 1,
-
-	BorderSizePixel = 0,
-
-	ZIndex = 43
-}, LeftBar)
-
-local FPSLabel = Create("TextLabel", {
-	Position = UDim2.fromScale(0, 0),
-
-	Size = UDim2.new(0.42, 0, 1, 0),
-
-	BackgroundTransparency = 1,
-
-	Text = "FPS",
-
-	TextColor3 = Color3.fromRGB(185, 185, 185),
-
-	TextSize = 9,
-
-	Font = Enum.Font.GothamBold,
-
-	TextXAlignment = Enum.TextXAlignment.Right,
-
-	ZIndex = 44
-}, FPSHolder)
-
-local FPSValue = Create("TextLabel", {
-	Position = UDim2.new(0.52, 0, 0, 0),
-
-	Size = UDim2.new(0.48, 0, 1, 0),
-
-	BackgroundTransparency = 1,
-
-	Text = "60",
-
-	TextColor3 = COLOR.White,
-
-	TextSize = 11,
-
-	Font = Enum.Font.GothamBold,
-
-	TextXAlignment = Enum.TextXAlignment.Left,
-
-	ZIndex = 44
-}, FPSHolder)
-
---============================================================
--- PING
---============================================================
-
-local PingHolder = Create("Frame", {
-	Position = UDim2.fromOffset(44, 0),
-
-	Size = UDim2.fromOffset(85, 22),
-
-	BackgroundTransparency = 1,
-
-	BorderSizePixel = 0,
-
-	ZIndex = 43
-}, RightBar)
-
-local PingValue = Create("TextLabel", {
-	Position = UDim2.fromScale(0, 0),
-
-	Size = UDim2.new(0.62, 0, 1, 0),
-
-	BackgroundTransparency = 1,
-
-	Text = "42 ms",
-
-	TextColor3 = COLOR.White,
-
-	TextSize = 11,
-
-	Font = Enum.Font.GothamBold,
-
-	TextXAlignment = Enum.TextXAlignment.Right,
-
-	ZIndex = 44
-}, PingHolder)
-
-local PingLabel = Create("TextLabel", {
-	Position = UDim2.new(0.7, 0, 0, 0),
-
-	Size = UDim2.new(0.3, 0, 1, 0),
-
-	BackgroundTransparency = 1,
-
-	Text = "PING",
-
-	TextColor3 = Color3.fromRGB(185, 185, 185),
+-- ================= HUD SYSTEM =================
+local hudSystem = Instance.new("Frame")
+hudSystem.Size = UDim2.fromOffset(560, 400)
+hudSystem.Position = UDim2.new(0.5, -280, 0.5, -200)
+hudSystem.BackgroundTransparency = 1
+hudSystem.Visible = false
+hudSystem.Parent = gui
+
+-- bars
+local bars = Instance.new("Frame")
+bars.Size = UDim2.new(1, 0, 0, 46)
+bars.Position = UDim2.new(0.5, 0, 0, 23)
+bars.AnchorPoint = Vector2.new(0.5, 0.5)
+bars.BackgroundTransparency = 1
+bars.Parent = hudSystem
+
+local function makeSide(leftSide)
+	local side = Instance.new("Frame")
+	side.Size = UDim2.new(0.5, 0, 1, 0)
+	side.Position = leftSide and UDim2.new(0, 0, 0, 0) or UDim2.new(0.5, 0, 0, 0)
+	side.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+	side.BorderSizePixel = 0
+	side.ClipsDescendants = true
+	side.Parent = bars
+	local c = Instance.new("UICorner")
+	c.CornerRadius = leftSide and UDim.new(0, 23) or UDim.new(0, 23)
+	c.Parent = side
+	return side
+end
+
+local leftBar = makeSide(true)
+local rightBar = makeSide(false)
+
+local function statLabel(parent2, text, size, bold, pos)
+	local l = Instance.new("TextLabel")
+	l.BackgroundTransparency = 1
+	l.Text = text
+	l.TextColor3 = bold and Color3.fromRGB(238, 238, 238) or Color3.fromRGB(160, 160, 160)
+	l.Font = Enum.Font.GothamBold
+	l.TextSize = size
+	l.Size = UDim2.fromOffset(60, 20)
+	l.Position = pos
+	l.Parent = parent2
+	return l
+end
+
+local fpsLabel = statLabel(leftBar, "FPS", 9, false, UDim2.new(1, -100, 0.5, -10))
+local fpsValue = statLabel(leftBar, "60", 11, true, UDim2.new(1, -70, 0.5, -10))
+local pingValue = statLabel(rightBar, "42 ms", 11, true, UDim2.new(0, 30, 0.5, -10))
+local pingLabel = statLabel(rightBar, "PING", 9, false, UDim2.new(0, 70, 0.5, -10))
+
+-- open core
+openCore = Instance.new("TextButton")
+openCore.Size = UDim2.fromOffset(62, 62)
+openCore.Position = UDim2.new(0.5, -31, 0, -8)
+openCore.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+openCore.Text = "◉"
+openCore.TextSize = 24
+openCore.Font = Enum.Font.GothamBold
+openCore.TextColor3 = Color3.fromRGB(227, 227, 227)
+openCore.BackgroundTransparency = 1
+openCore.TextTransparency = 1
+openCore.Active = false
+openCore.Parent = hudSystem
+Instance.new("UICorner", openCore).CornerRadius = UDim.new(1, 0)
+
+-- brand
+local brand = Instance.new("TextLabel")
+brand.Size = UDim2.fromOffset(120, 25)
+brand.Position = UDim2.new(0.5, -60, 0, 63)
+brand.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+brand.Text = "TENTIXWARE"
+brand.TextColor3 = Color3.fromRGB(200, 200, 200)
+brand.Font = Enum.Font.GothamBold
+brand.TextSize = 9
+brand.BackgroundTransparency = 1
+brand.TextTransparency = 1
+brand.Parent = hudSystem
+Instance.new("UICorner", brand).CornerRadius = UDim.new(0, 14)
+
+-- ================= CONTENT =================
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, 0, 0, 300)
+content.Position = UDim2.new(0, 0, 0, 110)
+content.BackgroundTransparency = 1
+content.Visible = false
+content.Parent = hudSystem
+
+-- categories
+local categoriesFrame = Instance.new("Frame")
+categoriesFrame.Size = UDim2.fromOffset(92, 236)
+categoriesFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+categoriesFrame.BorderSizePixel = 0
+categoriesFrame.Parent = content
+Instance.new("UICorner", categoriesFrame).CornerRadius = UDim.new(0, 17)
+local catLayout = Instance.new("UIListLayout")
+catLayout.Padding = UDim.new(0, 6)
+catLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+catLayout.Parent = categoriesFrame
+local catPad = Instance.new("UIPadding")
+catPad.PaddingTop = UDim.new(0, 7)
+catPad.Parent = categoriesFrame
+
+-- main window
+local mainWindow = Instance.new("Frame")
+mainWindow.Size = UDim2.new(1, -100, 1, 0)
+mainWindow.Position = UDim2.new(0, 100, 0, 0)
+mainWindow.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+mainWindow.BorderSizePixel = 0
+mainWindow.ClipsDescendants = true
+mainWindow.Parent = content
+Instance.new("UICorner", mainWindow).CornerRadius = UDim.new(0, 21)
+
+local windowInner = Instance.new("ScrollingFrame")
+windowInner.Size = UDim2.new(1, -32, 1, -32)
+windowInner.Position = UDim2.fromOffset(16, 16)
+windowInner.BackgroundTransparency = 1
+windowInner.ScrollBarThickness = 0
+windowInner.AutomaticCanvasSize = Enum.AutomaticSize.Y
+windowInner.CanvasSize = UDim2.new(0, 0, 0, 0)
+windowInner.Parent = mainWindow
+local innerLayout = Instance.new("UIListLayout")
+innerLayout.Padding = UDim.new(0, 10)
+innerLayout.Parent = windowInner
+
+local windowTitle = Instance.new("TextLabel")
+windowTitle.Size = UDim2.new(1, 0, 0, 20)
+windowTitle.BackgroundTransparency = 1
+windowTitle.Text = "COMBAT"
+windowTitle.TextColor3 = Color3.fromRGB(238, 238, 238)
+windowTitle.Font = Enum.Font.GothamBold
+windowTitle.TextSize = 11
+windowTitle.TextXAlignment = Enum.TextXAlignment.Left
+windowTitle.Parent = windowInner
+
+-- ================= COMPONENTS =================
+local function createToggle(parent2, onChanged)
+	local state = false
+	local t = Instance.new("TextButton")
+	t.Size = UDim2.fromOffset(32, 18)
+	t.BackgroundColor3 = Color3.fromRGB(48, 48, 48)
+	t.Text = ""
+	t.AutoButtonColor = false
+	t.Parent = parent2
+	Instance.new("UICorner", t).CornerRadius = UDim.new(1, 0)
+	local knob = Instance.new("Frame")
+	knob.Size = UDim2.fromOffset(12, 12)
+	knob.Position = UDim2.fromOffset(3, 3)
+	knob.BackgroundColor3 = Color3.fromRGB(119, 119, 119)
+	knob.BorderSizePixel = 0
+	knob.Parent = t
+	Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+	t.MouseButton1Click:Connect(function()
+		state = not state
+		tween(t, TweenInfo.new(0.2), {BackgroundColor3 =
+			state and Color3.fromRGB(102, 102, 102) or Color3.fromRGB(48, 48, 48)})
+		tween(knob, TweenInfo.new(0.2), {Position =
+			state and UDim2.fromOffset(17, 3) or UDim2.fromOffset(3, 3),
+			BackgroundColor3 = state and Color3.fromRGB(238, 238, 238) or Color3.fromRGB(119, 119, 119)})
+		if onChanged then onChanged(state) end
+	end)
+	return t, function() return state end
+end
+
+local function createSlider(parent2, min, max, default, onChanged)
+	local wrap = Instance.new("Frame")
+	wrap.Size = UDim2.fromOffset(100, 18)
+	wrap.BackgroundTransparency = 1
+	wrap.Parent = parent2
+	local bar = Instance.new("Frame")
+	bar.Size = UDim2.fromOffset(70, 4)
+	bar.Position = UDim2.fromOffset(0, 7)
+	bar.BackgroundColor3 = Color3.fromRGB(56, 56, 56)
+	bar.BorderSizePixel = 0
+	bar.Parent = wrap
+	Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
+	local knob = Instance.new("Frame")
+	knob.Size = UDim2.fromOffset(13, 13)
+	knob.AnchorPoint = Vector2.new(0.5, 0.5)
+	knob.Position = UDim2.new((default - min) / (max - min), 0, 0.5, 0)
+	knob.BackgroundColor3 = Color3.fromRGB(170, 170, 170)
+	knob.BorderSizePixel = 0
+	knob.Parent = bar
+	Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+	local valueLabel = Instance.new("TextLabel")
+	valueLabel.Size = UDim2.fromOffset(26, 18)
+	valueLabel.Position = UDim2.fromOffset(74, 0)
+	valueLabel.BackgroundTransparency = 1
+	valueLabel.Text = tostring(default)
+	valueLabel.TextColor3 = Color3.fromRGB(170, 170, 170)
+	valueLabel.Font = Enum.Font.Gotham
+	valueLabel.TextSize = 8
+	valueLabel.Parent = wrap
+
+	local value = default
+	local sliding = false
+	local function setFromX(x)
+		local rel = math.clamp((x - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+		value = math.floor(min + (max - min) * rel + 0.5)
+		knob.Position = UDim2.new(rel, 0, 0.5, 0)
+		valueLabel.Text = tostring(value)
+		if onChanged then onChanged(value) end
+	end
+	bar.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+			sliding = true
+			setFromX(input.Position.X)
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch) then
+			setFromX(input.Position.X)
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+			sliding = false
+		end
+	end)
+	return wrap, function() return value end
+end
+
+local function createModule(name, desc)
+	local m = Instance.new("Frame")
+	m.Size = UDim2.new(1, 0, 0, 42)
+	m.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	m.BackgroundTransparency = 0.965
+	m.BorderSizePixel = 0
+	m.Parent = windowInner
+	Instance.new("UICorner", m).CornerRadius = UDim.new(0, 12)
+	local n = Instance.new("TextLabel")
+	n.Size = UDim2.new(1, -60, 0, 14)
+	n.Position = UDim2.fromOffset(11, 7)
+	n.BackgroundTransparency = 1
+	n.Text = name
+	n.TextColor3 = Color3.fromRGB(221, 221, 221)
+	n.Font = Enum.Font.GothamBold
+	n.TextSize = 9
+	n.TextXAlignment = Enum.TextXAlignment.Left
+	n.Parent = m
+	local d = Instance.new("TextLabel")
+	d.Size = UDim2.new(1, -60, 0, 10)
+	d.Position = UDim2.fromOffset(11, 22)
+	d.BackgroundTransparency = 1
+	d.Text = desc
+	d.TextColor3 = Color3.fromRGB(110, 110, 110)
+	d.Font = Enum.Font.Gotham
+	d.TextSize = 7
+	d.TextXAlignment = Enum.TextXAlignment.Left
+	d.Parent = m
+	return m
+end
+
+-- module: Test (simple toggle)
+local testModule = createModule("Test", "Test function")
+local tToggle = Instance.new("Frame")
+tToggle.Size = UDim2.fromOffset(32, 18)
+tToggle.Position = UDim2.new(1, -43, 0.5, -9)
+tToggle.BackgroundTransparency = 1
+tToggle.Parent = testModule
+createToggle(tToggle, function(state) print("Test:", state) end)
+
+-- module: Test1 (dropdown with sub-settings)
+local test1 = Instance.new("Frame")
+test1.Size = UDim2.new(1, 0, 0, 42)
+test1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+test1.BackgroundTransparency = 0.965
+test1.BorderSizePixel = 0
+test1.ClipsDescendants = true
+test1.Parent = windowInner
+Instance.new("UICorner", test1).CornerRadius = UDim.new(0, 12)
+
+local header = Instance.new("TextButton")
+header.Size = UDim2.new(1, 0, 0, 42)
+header.BackgroundTransparency = 1
+header.Text = ""
+header.Parent = test1
+
+local arrow = Instance.new("TextLabel")
+arrow.Size = UDim2.fromOffset(12, 12)
+arrow.Position = UDim2.new(0, 11, 0, 15)
+arrow.BackgroundTransparency = 1
+arrow.Text = "⌃"
+arrow.TextColor3 = Color3.fromRGB(180, 180, 180)
+arrow.TextSize = 10
+arrow.Rotation = 180
+arrow.Parent = header
+
+local hName = Instance.new("TextLabel")
+hName.Size = UDim2.new(1, -80, 0, 14)
+hName.Position = UDim2.fromOffset(32, 7)
+hName.BackgroundTransparency = 1
+hName.Text = "Test1"
+hName.TextColor3 = Color3.fromRGB(221, 221, 221)
+hName.Font = Enum.Font.GothamBold
+hName.TextSize = 9
+hName.TextXAlignment = Enum.TextXAlignment.Left
+hName.Parent = header
+local hDesc = hName:Clone()
+hDesc.Text = "Settings"
+hDesc.TextColor3 = Color3.fromRGB(110, 110, 110)
+hDesc.Font = Enum.Font.Gotham
+hDesc.TextSize = 7
+hDesc.Position = UDim2.fromOffset(32, 22)
+hDesc.Parent = header
+
+local hToggleWrap = Instance.new("Frame")
+hToggleWrap.Size = UDim2.fromOffset(32, 18)
+hToggleWrap.Position = UDim2.new(1, -43, 0, 12)
+hToggleWrap.BackgroundTransparency = 1
+hToggleWrap.Parent = header
+createToggle(hToggleWrap, function(state) print("Test1:", state) end)
+
+local settingsFrame = Instance.new("Frame")
+settingsFrame.Size = UDim2.new(1, 0, 0, 0)
+settingsFrame.Position = UDim2.new(0, 0, 0, 42)
+settingsFrame.BackgroundTransparency = 1
+settingsFrame.Parent = test1
+local sLayout = Instance.new("UIListLayout")
+sLayout.Padding = UDim.new(0, 6)
+sLayout.Parent = settingsFrame
+local sPad = Instance.new("UIPadding")
+sPad.PaddingLeft = UDim.new(0, 10)
+sPad.PaddingRight = UDim.new(0, 10)
+sPad.PaddingBottom = UDim.new(0, 10)
+sPad.Parent = settingsFrame
+
+local function subSetting(name, desc, withSlider, min, max, default)
+	local s = Instance.new("Frame")
+	s.Size = UDim2.new(1, 0, 0, 38)
+	s.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	s.BackgroundTransparency = 0.965
+	s.BorderSizePixel = 0
+	s.Parent = settingsFrame
+	Instance.new("UICorner", s).CornerRadius = UDim.new(0, 10)
+	local n = Instance.new("TextLabel")
+	n.Size = UDim2.new(0.4, 0, 0, 12)
+	n.Position = UDim2.fromOffset(10, 8)
+	n.BackgroundTransparency = 1
+	n.Text = name
+	n.TextColor3 = Color3.fromRGB(217, 217, 217)
+	n.Font = Enum.Font.GothamBold
+	n.TextSize = 8
+	n.TextXAlignment = Enum.TextXAlignment.Left
+	n.Parent = s
+	local d = Instance.new("TextLabel")
+	d.Size = UDim2.new(0.4, 0, 0, 9)
+	d.Position = UDim2.fromOffset(10, 21)
+	d.BackgroundTransparency = 1
+	d.Text = desc
+	d.TextColor3 = Color3.fromRGB(100, 100, 100)
+	d.Font = Enum.Font.Gotham
+	d.TextSize = 6
+	d.TextXAlignment = Enum.TextXAlignment.Left
+	d.Parent = s
+
+	local controls = Instance.new("Frame")
+	controls.Size = UDim2.fromOffset(withSlider and 140 or 40, 18)
+	controls.Position = UDim2.new(1, withSlider and -150 or -50, 0.5, -9)
+	controls.BackgroundTransparency = 1
+	controls.Parent = s
+	local tg = Instance.new("Frame")
+	tg.Size = UDim2.fromOffset(32, 18)
+	tg.BackgroundTransparency = 1
+	tg.Parent = controls
+	createToggle(tg, function(state) print(name .. " toggle:", state) end)
+	if withSlider then
+		local sw = Instance.new("Frame")
+		sw.Size = UDim2.fromOffset(100, 18)
+		sw.Position = UDim2.fromOffset(40, 0)
+		sw.BackgroundTransparency = 1
+		sw.Parent = controls
+		createSlider(sw, min, max, default, function(v) print(name .. " slider:", v) end)
+	end
+	return s
+end
+
+subSetting("Test", "Enable function", false)
+subSetting("Test1", "Enable + Slider", true, 0, 100, 50)
+subSetting("Test2", "Enable + Slider", true, 0, 100, 70)
+
+local open1 = false
+local CLOSED_H, OPEN_H = 42, 42 + 3 * 44 + 16
+header.MouseButton1Click:Connect(function()
+	open1 = not open1
+	tween(test1, smooth, {Size = UDim2.new(1, 0, 0, open1 and OPEN_H or CLOSED_H)})
+	tween(settingsFrame, smooth, {Size = UDim2.new(1, 0, 0, open1 and (OPEN_H - 42) or 0)})
+	tween(arrow, smooth, {Rotation = open1 and 0 or 180})
+end)
+
+-- ================= CATEGORIES =================
+for i, catName in ipairs({"Combat", "Visuals", "Misc", "Settings"}) do
+	local c = Instance.new("TextButton")
+	c.Size = UDim2.new(1, -14, 0, 52)
+	c.BackgroundColor3 = i == 1 and Color3.fromRGB(85, 85, 85) or Color3.fromRGB(0, 0, 0)
+	c.BackgroundTransparency = i == 1 and 0 or 1
+	c.Text = catName
+	c.TextColor3 = i == 1 and Color3.fromRGB(240, 240, 240) or Color3.fromRGB(130, 130, 130)
+	c.Font = Enum.Font.GothamBold
+	c.TextSize = 8
+	c.Parent = categoriesFrame
+	Instance.new("UICorner", c).CornerRadius = UDim.new(0, 12)
+	c.MouseButton1Click:Connect(function()
+		for _, other in ipairs(categoriesFrame:GetChildren()) do
+			if other:IsA("TextButton") then
+				other.BackgroundTransparency = 1
+				other.TextColor3 = Color3.fromRGB(130, 130, 130)
+			end
+		end
+		c.BackgroundTransparency = 0
+		c.TextColor3 = Color3.fromRGB(240, 240, 240)
+		windowTitle.Text = string.upper(catName)
+	end)
+end
+
+-- ================= OPEN / CLOSE =================
+openCore.MouseButton1Click:Connect(function()
+	if not unlocked then return end
+	guiOpen = not guiOpen
+	hudSystem.Visible = true
+	content.Visible = guiOpen
+	tween(brand, smooth, {BackgroundTransparency = guiOpen and 0 or 1,
+		TextTransparency = guiOpen and 0 or 1})
+	if not guiOpen then
+		task.delay(0.5, function() if not guiOpen then hudSystem.Visible = false end end)
+	end
+end)
+
+-- ================= FPS / PING =================
+task.spawn(function()
+	while true do
+		task.wait(1.2)
+		if guiOpen then
+			fpsValue.Text = tostring(math.floor(1 / RunService.RenderStepped:Wait()))
+			local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+			pingValue.Text = math.floor(ping) .. " ms"
+		end
+	end
+end)
+
+print("[TentixWare] Нажми на замок, чтобы разблокировать HUD")
+185),
 
 	TextSize = 9,
 
