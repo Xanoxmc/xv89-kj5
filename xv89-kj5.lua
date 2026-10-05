@@ -1,292 +1,873 @@
+--// TENTIXWARE HUD
+--// LocalScript
+--// Помести в:
+--// StarterPlayer > StarterPlayerScripts
+
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local Stats = game:GetService("Stats")
-local lp = Players.LocalPlayer
 
--- Удаляем старый GUI если есть
-local old = lp.PlayerGui:FindFirstChild("TentixWare")
-if old then old:Destroy() end
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "TentixWare"
-gui.ResetOnSpawn = false
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = gethui and gethui() or lp.PlayerGui
+--==================================================
+-- CONFIG
+--==================================================
 
-local unlocked = false
-local guiOpen = false
+local GUI_NAME = "TentixWareHUD"
 
--- ====== КНОПКА-ЗАМОК ======
-local lockBtn = Instance.new("TextButton")
-lockBtn.Size = UDim2.new(0, 46, 0, 46)
-lockBtn.Position = UDim2.new(1, -58, 0.5, -23)
-lockBtn.BackgroundColor3 = Color3.fromRGB(100, 95, 90)
-lockBtn.BorderSizePixel = 0
-lockBtn.Text = "🔒"
-lockBtn.TextSize = 18
-lockBtn.Font = Enum.Font.Gotham
-lockBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-lockBtn.ZIndex = 40
-lockBtn.Active = true
-lockBtn.Draggable = true
-lockBtn.Parent = gui
-Instance.new("UICorner", lockBtn).CornerRadius = UDim.new(1, 0)
-local lockS = Instance.new("UIStroke", lockBtn)
-lockS.Color = Color3.fromRGB(255, 255, 255)
-lockS.Transparency = 0.82
+local MAIN_WIDTH = 560
+local MAIN_HEIGHT = 420
 
--- ====== HUD ПОЛОСКИ (FPS | PING) ======
-local hudLeft = Instance.new("Frame")
-hudLeft.Size = UDim2.new(0, 0, 0, 46)
-hudLeft.Position = UDim2.new(0.5, 0, 0.5, -23)
-hudLeft.BackgroundColor3 = Color3.fromRGB(90, 85, 80)
-hudLeft.BorderSizePixel = 0
-hudLeft.ClipsDescendants = true
-hudLeft.ZIndex = 10
-hudLeft.Visible = false
-hudLeft.Parent = gui
-local hlc = Instance.new("UICorner", hudLeft)
-hlc.CornerRadius = UDim.new(1, 0)
+local TWEEN_FAST = TweenInfo.new(
+	0.18,
+	Enum.EasingStyle.Quart,
+	Enum.EasingDirection.Out
+)
 
-local fpsLabel = Instance.new("TextLabel")
-fpsLabel.Size = UDim2.new(1, -10, 1, 0)
-fpsLabel.Position = UDim2.new(0, 8, 0, 0)
-fpsLabel.BackgroundTransparency = 1
-fpsLabel.Text = "FPS  60"
-fpsLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
-fpsLabel.TextSize = 11
-fpsLabel.Font = Enum.Font.GothamBold
-fpsLabel.TextXAlignment = Enum.TextXAlignment.Right
-fpsLabel.ZIndex = 11
-fpsLabel.Parent = hudLeft
+local TWEEN_SMOOTH = TweenInfo.new(
+	0.35,
+	Enum.EasingStyle.Quart,
+	Enum.EasingDirection.Out
+)
 
-local hudRight = Instance.new("Frame")
-hudRight.Size = UDim2.new(0, 0, 0, 46)
-hudRight.Position = UDim2.new(0.5, 0, 0.5, -23)
-hudRight.BackgroundColor3 = Color3.fromRGB(90, 85, 80)
-hudRight.BorderSizePixel = 0
-hudRight.ClipsDescendants = true
-hudRight.ZIndex = 10
-hudRight.Visible = false
-hudRight.Parent = gui
-Instance.new("UICorner", hudRight).CornerRadius = UDim.new(1, 0)
+--==================================================
+-- CLEAN OLD GUI
+--==================================================
 
-local pingLabel = Instance.new("TextLabel")
-pingLabel.Size = UDim2.new(1, -10, 1, 0)
-pingLabel.Position = UDim2.new(0, 10, 0, 0)
-pingLabel.BackgroundTransparency = 1
-pingLabel.Text = "42 ms  PING"
-pingLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
-pingLabel.TextSize = 11
-pingLabel.Font = Enum.Font.GothamBold
-pingLabel.TextXAlignment = Enum.TextXAlignment.Left
-pingLabel.ZIndex = 11
-pingLabel.Parent = hudRight
+local OldGui = PlayerGui:FindFirstChild(GUI_NAME)
 
--- Кнопка открытия (круглая по центру)
-local openCore = Instance.new("TextButton")
-openCore.Size = UDim2.new(0, 62, 0, 62)
-openCore.Position = UDim2.new(0.5, -31, 0.5, -31)
-openCore.BackgroundColor3 = Color3.fromRGB(120, 115, 110)
-openCore.BorderSizePixel = 0
-openCore.Text = ""
-openCore.ZIndex = 20
-openCore.Visible = false
-openCore.Parent = gui
-Instance.new("UICorner", openCore).CornerRadius = UDim.new(1, 0)
-local ocS = Instance.new("UIStroke", openCore)
-ocS.Color = Color3.fromRGB(255, 255, 255)
-ocS.Transparency = 0.82
-
--- Крестик/квадратик внутри
-local coreIcon = Instance.new("Frame")
-coreIcon.Size = UDim2.new(0, 20, 0, 20)
-coreIcon.Position = UDim2.new(0.5, -10, 0.5, -10)
-coreIcon.BackgroundTransparency = 1
-coreIcon.BorderSizePixel = 0
-coreIcon.ZIndex = 21
-coreIcon.Parent = openCore
-local ciS = Instance.new("UIStroke", coreIcon)
-ciS.Color = Color3.fromRGB(255, 255, 255)
-ciS.Transparency = 0.3
-ciS.Thickness = 2
-Instance.new("UICorner", coreIcon).CornerRadius = UDim.new(0, 5)
-
--- Бренд под кнопкой
-local brand = Instance.new("TextLabel")
-brand.Size = UDim2.new(0, 140, 0, 25)
-brand.Position = UDim2.new(0.5, -70, 0.5, 40)
-brand.BackgroundColor3 = Color3.fromRGB(85, 80, 75)
-brand.BackgroundTransparency = 0.1
-brand.BorderSizePixel = 0
-brand.Text = "TENTIXWARE"
-brand.TextColor3 = Color3.fromRGB(255, 255, 255)
-brand.TextTransparency = 0.22
-brand.TextSize = 9
-brand.Font = Enum.Font.GothamBold
-brand.ZIndex = 20
-brand.Visible = false
-brand.Parent = gui
-Instance.new("UICorner", brand).CornerRadius = UDim.new(0, 14)
-local bS = Instance.new("UIStroke", brand)
-bS.Color = Color3.fromRGB(255, 255, 255)
-bS.Transparency = 0.9
-
--- ====== ГЛАВНАЯ ПАНЕЛЬ ======
-local mainPanel = Instance.new("Frame")
-mainPanel.Size = UDim2.new(0, 380, 0, 300)
-mainPanel.Position = UDim2.new(0.5, -190, 0.5, -100)
-mainPanel.BackgroundColor3 = Color3.fromRGB(18, 17, 22)
-mainPanel.BorderSizePixel = 0
-mainPanel.ZIndex = 15
-mainPanel.Visible = false
-mainPanel.Active = true
-mainPanel.Parent = gui
-Instance.new("UICorner", mainPanel).CornerRadius = UDim.new(0, 20)
-local mpS = Instance.new("UIStroke", mainPanel)
-mpS.Color = Color3.fromRGB(255, 255, 255)
-mpS.Transparency = 0.92
-
--- Левая колонка (категории)
-local catPanel = Instance.new("Frame")
-catPanel.Size = UDim2.new(0, 90, 1, -20)
-catPanel.Position = UDim2.new(0, 10, 0, 10)
-catPanel.BackgroundColor3 = Color3.fromRGB(28, 26, 32)
-catPanel.BorderSizePixel = 0
-catPanel.ZIndex = 16
-catPanel.Parent = mainPanel
-Instance.new("UICorner", catPanel).CornerRadius = UDim.new(0, 16)
-local cpS = Instance.new("UIStroke", catPanel)
-cpS.Color = Color3.fromRGB(255, 255, 255)
-cpS.Transparency = 0.92
-local catLayout = Instance.new("UIListLayout", catPanel)
-catLayout.Padding = UDim.new(0, 5)
-local catPad = Instance.new("UIPadding", catPanel)
-catPad.PaddingTop = UDim.new(0, 7)
-catPad.PaddingLeft = UDim.new(0, 7)
-catPad.PaddingRight = UDim.new(0, 7)
-
--- Правая панель (окно)
-local windowPanel = Instance.new("Frame")
-windowPanel.Size = UDim2.new(1, -116, 1, -20)
-windowPanel.Position = UDim2.new(0, 108, 0, 10)
-windowPanel.BackgroundColor3 = Color3.fromRGB(22, 20, 28)
-windowPanel.BorderSizePixel = 0
-windowPanel.ZIndex = 16
-windowPanel.ClipsDescendants = true
-windowPanel.Parent = mainPanel
-Instance.new("UICorner", windowPanel).CornerRadius = UDim.new(0, 16)
-local wpS = Instance.new("UIStroke", windowPanel)
-wpS.Color = Color3.fromRGB(255, 255, 255)
-wpS.Transparency = 0.92
-
--- Заголовок окна
-local winHead = Instance.new("Frame")
-winHead.Size = UDim2.new(1, -20, 0, 28)
-winHead.Position = UDim2.new(0, 10, 0, 10)
-winHead.BackgroundTransparency = 1
-winHead.ZIndex = 17
-winHead.Parent = windowPanel
-
-local winTitle = Instance.new("TextLabel")
-winTitle.Size = UDim2.new(0.6, 0, 1, 0)
-winTitle.BackgroundTransparency = 1
-winTitle.Text = "COMBAT"
-winTitle.TextColor3 = Color3.fromRGB(238, 238, 238)
-winTitle.TextSize = 11
-winTitle.Font = Enum.Font.GothamBold
-winTitle.TextXAlignment = Enum.TextXAlignment.Left
-winTitle.ZIndex = 18
-winTitle.Parent = winHead
-
-local winSub = Instance.new("TextLabel")
-winSub.Size = UDim2.new(0.4, 0, 1, 0)
-winSub.Position = UDim2.new(0.6, 0, 0, 0)
-winSub.BackgroundTransparency = 1
-winSub.Text = "TENTIXWARE"
-winSub.TextColor3 = Color3.fromRGB(255, 255, 255)
-winSub.TextTransparency = 0.72
-winSub.TextSize = 7
-winSub.Font = Enum.Font.GothamBold
-winSub.TextXAlignment = Enum.TextXAlignment.Right
-winSub.ZIndex = 18
-winSub.Parent = winHead
-
--- Список модулей (скролл)
-local moduleList = Instance.new("ScrollingFrame")
-moduleList.Size = UDim2.new(1, -20, 1, -50)
-moduleList.Position = UDim2.new(0, 10, 0, 44)
-moduleList.BackgroundTransparency = 1
-moduleList.BorderSizePixel = 0
-moduleList.ScrollBarThickness = 2
-moduleList.ScrollBarImageColor3 = Color3.fromRGB(150, 145, 160)
-moduleList.ZIndex = 17
-moduleList.Parent = windowPanel
-local modLayout = Instance.new("UIListLayout", moduleList)
-modLayout.Padding = UDim.new(0, 7)
-modLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
--- ====== ФУНКЦИЯ СОЗДАНИЯ ТОГГЛА ======
-local function makeTog(parent, zIdx)
-    local tog = Instance.new("TextButton")
-    tog.Size = UDim2.new(0, 32, 0, 18)
-    tog.BackgroundColor3 = Color3.fromRGB(48, 44, 58)
-    tog.BorderSizePixel = 0
-    tog.Text = ""
-    tog.ZIndex = zIdx or 20
-    tog.Parent = parent
-    Instance.new("UICorner", tog).CornerRadius = UDim.new(1, 0)
-    local dot = Instance.new("Frame")
-    dot.Size = UDim2.new(0, 12, 0, 12)
-    dot.Position = UDim2.new(0, 3, 0.5, -6)
-    dot.BackgroundColor3 = Color3.fromRGB(100, 95, 115)
-    dot.BorderSizePixel = 0
-    dot.ZIndex = (zIdx or 20) + 1
-    dot.Parent = tog
-    Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
-    local active = false
-    tog.MouseButton1Click:Connect(function()
-        active = not active
-        TweenService:Create(tog, TweenInfo.new(0.18), {
-            BackgroundColor3 = active and Color3.fromRGB(100,95,115) or Color3.fromRGB(48,44,58)
-        }):Play()
-        TweenService:Create(dot, TweenInfo.new(0.18), {
-            Position = active and UDim2.new(1,-15,0.5,-6) or UDim2.new(0,3,0.5,-6),
-            BackgroundColor3 = active and Color3.fromRGB(220,215,230) or Color3.fromRGB(100,95,115)
-        }):Play()
-    end)
-    return tog, active
+if OldGui then
+	OldGui:Destroy()
 end
 
--- ====== ФУНКЦИЯ СОЗДАНИЯ МОДУЛЯ ======
-local function makeModule(name, desc, order, onToggle)
-    local row = Instance.new("Frame")
-    row.Size = UDim2.new(1, 0, 0, 42)
-    row.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    row.BackgroundTransparency = 0.965
-    row.BorderSizePixel = 0
-    row.LayoutOrder = order
-    row.ZIndex = 18
-    row.Parent = moduleList
-    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 12)
-    local rs = Instance.new("UIStroke", row)
-    rs.Color = Color3.fromRGB(255, 255, 255)
-    rs.Transparency = 0.945
+--==================================================
+-- HELPERS
+--==================================================
 
-    local nameL = Instance.new("TextLabel")
-    nameL.Size = UDim2.new(1, -50, 0, 22)
-    nameL.Position = UDim2.new(0, 11, 0, 5)
-    nameL.BackgroundTransparency = 1
-    nameL.Text = name
-    nameL.TextColor3 = Color3.fromRGB(218, 218, 218)
-    nameL.TextSize = 9
-    nameL.Font = Enum.Font.GothamBold
-    nameL.TextXAlignment = Enum.TextXAlignment.Left
-    nameL.ZIndex = 19
-    nameL.Parent = row
+local function New(className, properties, parent)
+	local object = Instance.new(className)
 
-    local descL = Instance.new("TextLabel")
+	for property, value in pairs(properties or {}) do
+		object[property] = value
+	end
+
+	object.Parent = parent
+
+	return object
+end
+
+local function Corner(parent, radius)
+	return New("UICorner", {
+		CornerRadius = UDim.new(0, radius or 10)
+	}, parent)
+end
+
+local function Stroke(parent, color, transparency, thickness)
+	return New("UIStroke", {
+		Color = color or Color3.fromRGB(255, 255, 255),
+		Transparency = transparency or 0.8,
+		Thickness = thickness or 1
+	}, parent)
+end
+
+local function Tween(object, info, properties)
+	local tween = TweenService:Create(object, info, properties)
+	tween:Play()
+	return tween
+end
+
+--==================================================
+-- COLORS
+--==================================================
+
+local BG = Color3.fromRGB(9, 10, 14)
+local PANEL = Color3.fromRGB(15, 17, 23)
+local PANEL2 = Color3.fromRGB(20, 22, 29)
+
+local WHITE = Color3.fromRGB(245, 245, 250)
+local GREY = Color3.fromRGB(145, 148, 158)
+local DARK_GREY = Color3.fromRGB(55, 58, 67)
+
+local ACCENT = Color3.fromRGB(145, 90, 255)
+local ACCENT_DARK = Color3.fromRGB(91, 52, 170)
+
+--==================================================
+-- SCREEN GUI
+--==================================================
+
+local ScreenGui = New("ScreenGui", {
+	Name = GUI_NAME,
+	ResetOnSpawn = false,
+	IgnoreGuiInset = true,
+	ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+}, PlayerGui)
+
+--==================================================
+-- SCALE
+--==================================================
+
+local UIScale = New("UIScale", {
+	Scale = 1
+}, ScreenGui)
+
+local function UpdateScale()
+	local camera = workspace.CurrentCamera
+
+	if not camera then
+		return
+	end
+
+	local viewport = camera.ViewportSize
+
+	local widthScale = viewport.X / MAIN_WIDTH
+	local heightScale = viewport.Y / MAIN_HEIGHT
+
+	local scale = math.min(widthScale, heightScale)
+
+	-- Не даём GUI стать слишком маленьким.
+	scale = math.clamp(scale, 0.62, 1)
+
+	UIScale.Scale = scale
+end
+
+task.spawn(function()
+	while ScreenGui.Parent do
+		UpdateScale()
+		task.wait(0.5)
+	end
+end)
+
+--==================================================
+-- BACKGROUND OVERLAY
+--==================================================
+
+local Overlay = New("Frame", {
+	Name = "Overlay",
+	BackgroundColor3 = Color3.new(0, 0, 0),
+	BackgroundTransparency = 0.38,
+	BorderSizePixel = 0,
+	Size = UDim2.fromScale(1, 1),
+	Visible = false,
+	ZIndex = 1
+}, ScreenGui)
+
+--==================================================
+-- MAIN HUD
+--==================================================
+
+local Hud = New("Frame", {
+	Name = "HUD",
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.5),
+	Size = UDim2.fromOffset(MAIN_WIDTH, MAIN_HEIGHT),
+	BackgroundTransparency = 1,
+	Visible = false,
+	ZIndex = 10
+}, ScreenGui)
+
+--==================================================
+-- TOP BRAND
+--==================================================
+
+local Brand = New("TextLabel", {
+	Name = "Brand",
+	AnchorPoint = Vector2.new(0.5, 0),
+	Position = UDim2.new(0.5, 0, 0, -42),
+	Size = UDim2.fromOffset(190, 32),
+	BackgroundColor3 = PANEL,
+	BackgroundTransparency = 0.05,
+	BorderSizePixel = 0,
+	Text = "TENTIXWARE",
+	TextColor3 = WHITE,
+	TextSize = 14,
+	Font = Enum.Font.GothamBold,
+	ZIndex = 20
+}, Hud)
+
+Corner(Brand, 12)
+Stroke(Brand, ACCENT, 0.72, 1)
+
+--==================================================
+-- FPS / PING
+--==================================================
+
+local FPS = New("TextLabel", {
+	Name = "FPS",
+	AnchorPoint = Vector2.new(0, 0),
+	Position = UDim2.new(0, 8, 0, -34),
+	Size = UDim2.fromOffset(90, 24),
+	BackgroundTransparency = 1,
+	Text = "FPS 60",
+	TextColor3 = GREY,
+	TextSize = 11,
+	Font = Enum.Font.GothamMedium,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	ZIndex = 20
+}, Hud)
+
+local PING = New("TextLabel", {
+	Name = "PING",
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -8, 0, -34),
+	Size = UDim2.fromOffset(90, 24),
+	BackgroundTransparency = 1,
+	Text = "PING 0",
+	TextColor3 = GREY,
+	TextSize = 11,
+	Font = Enum.Font.GothamMedium,
+	TextXAlignment = Enum.TextXAlignment.Right,
+	ZIndex = 20
+}, Hud)
+
+--==================================================
+-- MAIN WINDOW
+--==================================================
+
+local Window = New("Frame", {
+	Name = "Window",
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.5),
+	Size = UDim2.fromOffset(MAIN_WIDTH, MAIN_HEIGHT),
+	BackgroundColor3 = BG,
+	BorderSizePixel = 0,
+	ZIndex = 10
+}, Hud)
+
+Corner(Window, 18)
+Stroke(Window, Color3.fromRGB(70, 72, 84), 0.55, 1)
+
+--==================================================
+-- WINDOW HEADER
+--==================================================
+
+local Header = New("Frame", {
+	Name = "Header",
+	Position = UDim2.fromOffset(0, 0),
+	Size = UDim2.new(1, 0, 0, 52),
+	BackgroundTransparency = 1,
+	ZIndex = 12
+}, Window)
+
+local WindowTitle = New("TextLabel", {
+	Name = "Title",
+	Position = UDim2.fromOffset(18, 10),
+	Size = UDim2.new(1, -70, 0, 18),
+	BackgroundTransparency = 1,
+	Text = "TentixWare",
+	TextColor3 = WHITE,
+	TextSize = 15,
+	Font = Enum.Font.GothamBold,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	ZIndex = 13
+}, Header)
+
+local WindowSubtitle = New("TextLabel", {
+	Name = "Subtitle",
+	Position = UDim2.fromOffset(18, 28),
+	Size = UDim2.new(1, -70, 0, 16),
+	BackgroundTransparency = 1,
+	Text = "HUD / FUNCTIONS",
+	TextColor3 = GREY,
+	TextSize = 9,
+	Font = Enum.Font.GothamMedium,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	ZIndex = 13
+}, Header)
+
+--==================================================
+-- CLOSE BUTTON
+--==================================================
+
+local CloseButton = New("TextButton", {
+	Name = "Close",
+	AnchorPoint = Vector2.new(1, 0.5),
+	Position = UDim2.new(1, -14, 0.5, 0),
+	Size = UDim2.fromOffset(30, 30),
+	BackgroundColor3 = PANEL2,
+	BackgroundTransparency = 0.1,
+	BorderSizePixel = 0,
+	Text = "×",
+	TextColor3 = GREY,
+	TextSize = 20,
+	Font = Enum.Font.GothamMedium,
+	AutoButtonColor = false,
+	ZIndex = 20
+}, Header)
+
+Corner(CloseButton, 9)
+Stroke(CloseButton, Color3.fromRGB(80, 82, 95), 0.65, 1)
+
+CloseButton.MouseEnter:Connect(function()
+	Tween(CloseButton, TWEEN_FAST, {
+		BackgroundColor3 = Color3.fromRGB(34, 35, 44),
+		TextColor3 = WHITE
+	})
+end)
+
+CloseButton.MouseLeave:Connect(function()
+	Tween(CloseButton, TWEEN_FAST, {
+		BackgroundColor3 = PANEL2,
+		TextColor3 = GREY
+	})
+end)
+
+--==================================================
+-- CONTENT
+--==================================================
+
+local Content = New("Frame", {
+	Name = "Content",
+	Position = UDim2.fromOffset(12, 58),
+	Size = UDim2.new(1, -24, 1, -70),
+	BackgroundTransparency = 1,
+	ZIndex = 11
+}, Window)
+
+--==================================================
+-- CATEGORIES
+--==================================================
+
+local Categories = New("Frame", {
+	Name = "Categories",
+	Position = UDim2.fromOffset(0, 0),
+	Size = UDim2.fromOffset(130, 1),
+	BackgroundColor3 = PANEL,
+	BorderSizePixel = 0,
+	ZIndex = 12
+}, Content)
+
+Corner(Categories, 12)
+Stroke(Categories, Color3.fromRGB(65, 67, 78), 0.75, 1)
+
+local CategoryList = New("UIListLayout", {
+	Padding = UDim.new(0, 6),
+	SortOrder = Enum.SortOrder.LayoutOrder
+}, Categories)
+
+local CategoryPadding = New("UIPadding", {
+	PaddingTop = UDim.new(0, 10),
+	PaddingLeft = UDim.new(0, 8),
+	PaddingRight = UDim.new(0, 8)
+}, Categories)
+
+local ActiveCategory = nil
+
+local function CreateCategory(text, order)
+	local Button = New("TextButton", {
+		Name = text,
+		Size = UDim2.new(1, 0, 0, 38),
+		BackgroundColor3 = PANEL,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Text = text,
+		TextColor3 = GREY,
+		TextSize = 11,
+		Font = Enum.Font.GothamSemibold,
+		AutoButtonColor = false,
+		LayoutOrder = order,
+		ZIndex = 15
+	}, Categories)
+
+	Corner(Button, 9)
+
+	Button.MouseEnter:Connect(function()
+		if ActiveCategory ~= Button then
+			Tween(Button, TWEEN_FAST, {
+				BackgroundColor3 = PANEL2,
+				BackgroundTransparency = 0.15,
+				TextColor3 = WHITE
+			})
+		end
+	end)
+
+	Button.MouseLeave:Connect(function()
+		if ActiveCategory ~= Button then
+			Tween(Button, TWEEN_FAST, {
+				BackgroundTransparency = 1,
+				TextColor3 = GREY
+			})
+		end
+	end)
+
+	Button.MouseButton1Click:Connect(function()
+		if ActiveCategory and ActiveCategory ~= Button then
+			Tween(ActiveCategory, TWEEN_FAST, {
+				BackgroundTransparency = 1,
+				TextColor3 = GREY
+			})
+		end
+
+		ActiveCategory = Button
+
+		Tween(Button, TWEEN_FAST, {
+			BackgroundColor3 = ACCENT_DARK,
+			BackgroundTransparency = 0.15,
+			TextColor3 = WHITE
+		})
+	end)
+
+	return Button
+end
+
+local CombatCategory = CreateCategory("Combat", 1)
+local VisualsCategory = CreateCategory("Visuals", 2)
+local MiscCategory = CreateCategory("Misc", 3)
+local SettingsCategory = CreateCategory("Settings", 4)
+
+ActiveCategory = CombatCategory
+
+Tween(CombatCategory, TWEEN_FAST, {
+	BackgroundColor3 = ACCENT_DARK,
+	BackgroundTransparency = 0.15,
+	TextColor3 = WHITE
+})
+
+--==================================================
+-- FUNCTIONS WINDOW
+--==================================================
+
+local FunctionsWindow = New("Frame", {
+	Name = "Functions",
+	Position = UDim2.fromOffset(142, 0),
+	Size = UDim2.new(1, -142, 1, 0),
+	BackgroundColor3 = PANEL,
+	BorderSizePixel = 0,
+	ClipsDescendants = true,
+	ZIndex = 12
+}, Content)
+
+Corner(FunctionsWindow, 12)
+Stroke(FunctionsWindow, Color3.fromRGB(65, 67, 78), 0.75, 1)
+
+--==================================================
+-- FUNCTION HEADER
+--==================================================
+
+local FunctionTitle = New("TextLabel", {
+	Position = UDim2.fromOffset(14, 10),
+	Size = UDim2.new(1, -28, 0, 24),
+	BackgroundTransparency = 1,
+	Text = "COMBAT",
+	TextColor3 = WHITE,
+	TextSize = 12,
+	Font = Enum.Font.GothamBold,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	ZIndex = 15
+}, FunctionsWindow)
+
+local FunctionLine = New("Frame", {
+	Position = UDim2.fromOffset(14, 39),
+	Size = UDim2.new(1, -28, 0, 1),
+	BackgroundColor3 = Color3.fromRGB(48, 50, 59),
+	BorderSizePixel = 0,
+	ZIndex = 14
+}, FunctionsWindow)
+
+--==================================================
+-- TOGGLE CREATOR
+--==================================================
+
+local function CreateToggle(parent, position, enabled)
+	local Holder = New("TextButton", {
+		Position = position,
+		Size = UDim2.fromOffset(42, 22),
+		BackgroundColor3 = Color3.fromRGB(40, 42, 51),
+		BorderSizePixel = 0,
+		Text = "",
+		AutoButtonColor = false,
+		ZIndex = 30
+	}, parent)
+
+	Corner(Holder, 11)
+
+	local Knob = New("Frame", {
+		Position = UDim2.fromOffset(3, 3),
+		Size = UDim2.fromOffset(16, 16),
+		BackgroundColor3 = Color3.fromRGB(190, 192, 200),
+		BorderSizePixel = 0,
+		ZIndex = 31
+	}, Holder)
+
+	Corner(Knob, 8)
+
+	local State = enabled == true
+
+	local function SetState(value)
+		State = value
+
+		if State then
+			Tween(Holder, TWEEN_FAST, {
+				BackgroundColor3 = ACCENT
+			})
+
+			Tween(Knob, TWEEN_FAST, {
+				Position = UDim2.new(1, -19, 0, 3),
+				BackgroundColor3 = WHITE
+			})
+		else
+			Tween(Holder, TWEEN_FAST, {
+				BackgroundColor3 = Color3.fromRGB(40, 42, 51)
+			})
+
+			Tween(Knob, TWEEN_FAST, {
+				Position = UDim2.fromOffset(3, 3),
+				BackgroundColor3 = Color3.fromRGB(190, 192, 200)
+			})
+		end
+	end
+
+	Holder.MouseButton1Click:Connect(function()
+		SetState(not State)
+	end)
+
+	SetState(State)
+
+	return Holder, function()
+		return State
+	end, SetState
+end
+
+--==================================================
+-- NORMAL FUNCTION
+--==================================================
+
+local TestRow = New("Frame", {
+	Name = "Test",
+	Position = UDim2.fromOffset(10, 50),
+	Size = UDim2.new(1, -20, 0, 40),
+	BackgroundColor3 = PANEL2,
+	BorderSizePixel = 0,
+	ZIndex = 15
+}, FunctionsWindow)
+
+Corner(TestRow, 9)
+
+New("TextLabel", {
+	Position = UDim2.fromOffset(12, 0),
+	Size = UDim2.new(1, -75, 1, 0),
+	BackgroundTransparency = 1,
+	Text = "Test",
+	TextColor3 = WHITE,
+	TextSize = 11,
+	Font = Enum.Font.GothamMedium,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	ZIndex = 17
+}, TestRow)
+
+CreateToggle(
+	TestRow,
+	UDim2.new(1, -54, 0.5, -11),
+	false
+)
+
+--==================================================
+-- TEST1 EXPANDABLE FUNCTION
+--==================================================
+
+local Test1Container = New("Frame", {
+	Name = "Test1",
+	Position = UDim2.fromOffset(10, 96),
+	Size = UDim2.new(1, -20, 0, 42),
+	BackgroundColor3 = PANEL2,
+	BorderSizePixel = 0,
+	ClipsDescendants = true,
+	ZIndex = 15
+}, FunctionsWindow)
+
+Corner(Test1Container, 9)
+
+-- Header is a FRAME, NOT a button.
+-- This allows the toggle and arrow to be clicked separately.
+
+local Test1Header = New("Frame", {
+	Name = "Header",
+	Position = UDim2.fromOffset(0, 0),
+	Size = UDim2.new(1, 0, 0, 42),
+	BackgroundTransparency = 1,
+	ZIndex = 17
+}, Test1Container)
+
+New("TextLabel", {
+	Position = UDim2.fromOffset(38, 0),
+	Size = UDim2.new(1, -110, 1, 0),
+	BackgroundTransparency = 1,
+	Text = "Test1",
+	TextColor3 = WHITE,
+	TextSize = 11,
+	Font = Enum.Font.GothamMedium,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	ZIndex = 20
+}, Test1Header)
+
+--==================================================
+-- ARROW
+--==================================================
+
+local ArrowButton = New("TextButton", {
+	Name = "Arrow",
+	Position = UDim2.fromOffset(8, 6),
+	Size = UDim2.fromOffset(30, 30),
+	BackgroundTransparency = 1,
+	BorderSizePixel = 0,
+	Text = "‹",
+	TextColor3 = GREY,
+	TextSize = 25,
+	Font = Enum.Font.GothamMedium,
+	Rotation = 90,
+	AutoButtonColor = false,
+	ZIndex = 25
+}, Test1Header)
+
+--==================================================
+-- TEST1 MAIN TOGGLE
+--==================================================
+
+local Test1Toggle = CreateToggle(
+	Test1Header,
+	UDim2.new(1, -54, 0.5, -11),
+	false
+)
+
+--==================================================
+-- SUBFUNCTIONS AREA
+--==================================================
+
+local Settings = New("Frame", {
+	Name = "Settings",
+	Position = UDim2.fromOffset(10, 48),
+	Size = UDim2.new(1, -20, 0, 134),
+	BackgroundTransparency = 1,
+	ZIndex = 18
+}, Test1Container)
+
+--==================================================
+-- SLIDER
+--==================================================
+
+local function CreateSlider(parent, y, startValue)
+	local Holder = New("Frame", {
+		Position = UDim2.new(0, 0, 0, y),
+		Size = UDim2.new(1, 0, 0, 40),
+		BackgroundTransparency = 1,
+		ZIndex = 22
+	}, parent)
+
+	-- Value ABOVE slider
+	local Value = New("TextLabel", {
+		Position = UDim2.new(0.57, 0, 0, 0),
+		Size = UDim2.new(0.40, 0, 0, 15),
+		BackgroundTransparency = 1,
+		Text = tostring(startValue),
+		TextColor3 = WHITE,
+		TextSize = 9,
+		Font = Enum.Font.GothamBold,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		ZIndex = 25
+	}, Holder)
+
+	local Slider = New("Frame", {
+		Position = UDim2.new(0.57, 0, 0, 20),
+		Size = UDim2.new(0.40, 0, 0, 5),
+		BackgroundColor3 = Color3.fromRGB(48, 50, 59),
+		BorderSizePixel = 0,
+		ZIndex = 23
+	}, Holder)
+
+	Corner(Slider, 4)
+
+	local Fill = New("Frame", {
+		Position = UDim2.fromScale(0, 0),
+		Size = UDim2.new(startValue / 100, 0, 1, 0),
+		BackgroundColor3 = ACCENT,
+		BorderSizePixel = 0,
+		ZIndex = 24
+	}, Slider)
+
+	Corner(Fill, 4)
+
+	local Knob = New("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(startValue / 100, 0, 0.5, 0),
+		Size = UDim2.fromOffset(12, 12),
+		BackgroundColor3 = WHITE,
+		BorderSizePixel = 0,
+		ZIndex = 26
+	}, Slider)
+
+	Corner(Knob, 8)
+
+	local Dragging = false
+
+	local function SetValueFromX(x)
+		local left = Slider.AbsolutePosition.X
+		local width = Slider.AbsoluteSize.X
+
+		local percent = math.clamp(
+			(x - left) / width,
+			0,
+			1
+		)
+
+		local value = math.floor(percent * 100 + 0.5)
+
+		Value.Text = tostring(value)
+
+		Fill.Size = UDim2.new(percent, 0, 1, 0)
+		Knob.Position = UDim2.new(percent, 0, 0.5, 0)
+	end
+
+	Slider.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+
+			Dragging = true
+			SetValueFromX(input.Position.X)
+		end
+	end)
+
+	Slider.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+
+			Dragging = false
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if not Dragging then
+			return
+		end
+
+		if input.UserInputType == Enum.UserInputType.MouseMovement
+			or input.UserInputType == Enum.UserInputType.Touch then
+
+			SetValueFromX(input.Position.X)
+		end
+	end)
+
+	return Holder
+end
+
+--==================================================
+-- SUBFUNCTION ROW CREATOR
+--==================================================
+
+local function CreateSubFunction(name, y, value)
+	local Row = New("Frame", {
+		Name = name,
+		Position = UDim2.fromOffset(0, y),
+		Size = UDim2.new(1, 0, 0, 40),
+		BackgroundColor3 = Color3.fromRGB(24, 26, 34),
+		BorderSizePixel = 0,
+		ZIndex = 20
+	}, Settings)
+
+	Corner(Row, 8)
+
+	New("TextLabel", {
+		Position = UDim2.fromOffset(10, 0),
+		Size = UDim2.new(0.42, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Text = name,
+		TextColor3 = WHITE,
+		TextSize = 10,
+		Font = Enum.Font.GothamMedium,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 25
+	}, Row)
+
+	-- Toggle is BEFORE slider.
+	CreateToggle(
+		Row,
+		UDim2.new(0.45, 0, 0.5, -11),
+		false
+	)
+
+	-- Slider is to the RIGHT of toggle.
+	CreateSlider(
+		Row,
+		0,
+		value
+	)
+
+	return Row
+end
+
+--==================================================
+-- SUBFUNCTIONS
+--==================================================
+
+CreateSubFunction("Test", 0, 50)
+CreateSubFunction("Test1", 44, 65)
+CreateSubFunction("Test2", 88, 30)
+
+--==================================================
+-- EXPAND / COLLAPSE
+--==================================================
+
+local Expanded = false
+
+local CLOSED_HEIGHT = 42
+local OPEN_HEIGHT = 188
+
+local function SetExpanded(state)
+	Expanded = state
+
+	if Expanded then
+		-- Arrow DOWN
+		Tween(ArrowButton, TWEEN_SMOOTH, {
+			Rotation = -90,
+			TextColor3 = WHITE
+		})
+
+		Tween(Test1Container, TWEEN_SMOOTH, {
+			Size = UDim2.new(1, -20, 0, OPEN_HEIGHT)
+		})
+	else
+		-- Arrow UP
+		Tween(ArrowButton, TWEEN_SMOOTH, {
+			Rotation = 90,
+			TextColor3 = GREY
+		})
+
+		Tween(Test1Container, TWEEN_SMOOTH, {
+			Size = UDim2.new(1, -20, 0, CLOSED_HEIGHT)
+		})
+	end
+end
+
+ArrowButton.MouseButton1Click:Connect(function()
+	SetExpanded(not Expanded)
+end)
+
+--==================================================
+-- OPEN / CLOSE BUTTON
+--==================================================
+
+local OpenButton = New("TextButton", {
+	Name = "OpenButton",
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.5),
+	Size = UDim2.fromOffset(74, 74),
+	BackgroundColor3 = PANEL,
+	BorderSizePixel = 0,
+	Text = "",
+	AutoButtonColor = false,
+	Visible = true,
+	ZIndex = 50
+}, ScreenGui)
+
+Corner(OpenButton, 20)
+Stroke(OpenButton, ACCENT, 0.45, 1)
+
+local OpenCore = New("Frame", {
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.5),
+	Size = UDim2.fromOffset(38, 38),
+	BackgroundColor3 = ACCENT,
+	BorderSizePixel = 0,
+ce.new("TextLabel")
     descL.Size = UDim2.new(1, -50, 0, 15)
     descL.Position = UDim2.new(0, 11, 0, 24)
     descL.BackgroundTransparency = 1
