@@ -1,7 +1,7 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local Stats = game:GetService("Stats")
-local UIS = game:GetService("UserInputService")
 local lp = Players.LocalPlayer
 
 local gui = Instance.new("ScreenGui")
@@ -11,57 +11,69 @@ gui.Parent = gethui and gethui() or lp.PlayerGui
 
 -- ====== ПОЛОСКА ======
 local strip = Instance.new("Frame")
-strip.Size = UDim2.new(0, 215, 0, 30)
-strip.Position = UDim2.new(0, 0, 1, -30)
-strip.BackgroundColor3 = Color3.fromRGB(9, 8, 18)
+strip.Size = UDim2.new(0, 220, 0, 28)
+strip.Position = UDim2.new(0, 6, 0, 6)
+strip.BackgroundColor3 = Color3.fromRGB(8, 7, 16)
 strip.BorderSizePixel = 0
 strip.ZIndex = 20
 strip.Active = true
 strip.Draggable = true
 strip.ClipsDescendants = true
 strip.Parent = gui
-Instance.new("UICorner", strip).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", strip).CornerRadius = UDim.new(1, 0)
+
+-- Обводка
+local stripStroke = Instance.new("UIStroke", strip)
+stripStroke.Color = Color3.fromRGB(255, 255, 255)
+stripStroke.Transparency = 0.86
+stripStroke.Thickness = 0.8
 
 -- Белое сияние сверху
-local shine = Instance.new("Frame")
-shine.Size = UDim2.new(1, 0, 0, 1)
-shine.Position = UDim2.new(0, 0, 0, 0)
-shine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-shine.BackgroundTransparency = 0.55
-shine.BorderSizePixel = 0
-shine.ZIndex = 22
-shine.Parent = strip
+local topShine = Instance.new("Frame")
+topShine.Size = UDim2.new(0.9, 0, 0, 1)
+topShine.Position = UDim2.new(0.05, 0, 0, 0)
+topShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+topShine.BackgroundTransparency = 0.5
+topShine.BorderSizePixel = 0
+topShine.ZIndex = 22
+topShine.Parent = strip
+Instance.new("UICorner", topShine).CornerRadius = UDim.new(1, 0)
 
--- Белый градиент внутри (имитация сияния)
-local glow = Instance.new("Frame")
-glow.Size = UDim2.new(1, 0, 0.5, 0)
-glow.Position = UDim2.new(0, 0, 0, 0)
-glow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-glow.BackgroundTransparency = 0.88
-glow.BorderSizePixel = 0
-glow.ZIndex = 21
-glow.Parent = strip
-
--- Анимация сияния (движущийся блик)
+-- Движущийся блик
 local blik = Instance.new("Frame")
-blik.Size = UDim2.new(0.3, 0, 1, 0)
-blik.Position = UDim2.new(-0.3, 0, 0, 0)
+blik.Size = UDim2.new(0.25, 0, 1, 0)
+blik.Position = UDim2.new(-0.25, 0, 0, 0)
 blik.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-blik.BackgroundTransparency = 0.82
+blik.BackgroundTransparency = 0.78
 blik.BorderSizePixel = 0
 blik.ZIndex = 23
 blik.Parent = strip
 Instance.new("UICorner", blik).CornerRadius = UDim.new(0.5, 0)
 
+-- TW логотип
+local twLabel = Instance.new("TextLabel")
+twLabel.Size = UDim2.new(0, 22, 0, 22)
+twLabel.Position = UDim2.new(0, 3, 0.5, -11)
+twLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+twLabel.BackgroundTransparency = 0.88
+twLabel.Text = "TW"
+twLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+twLabel.TextTransparency = 0.2
+twLabel.TextSize = 8
+twLabel.Font = Enum.Font.GothamBold
+twLabel.ZIndex = 25
+twLabel.Parent = strip
+Instance.new("UICorner", twLabel).CornerRadius = UDim.new(1, 0)
+
 -- Название
 local nameL = Instance.new("TextLabel")
-nameL.Size = UDim2.new(0, 75, 1, 0)
-nameL.Position = UDim2.new(0, 8, 0, 0)
+nameL.Size = UDim2.new(0, 68, 1, 0)
+nameL.Position = UDim2.new(0, 28, 0, 0)
 nameL.BackgroundTransparency = 1
 nameL.Text = "TentixWare"
 nameL.TextColor3 = Color3.fromRGB(255, 255, 255)
-nameL.TextTransparency = 0.08
-nameL.TextSize = 11
+nameL.TextTransparency = 0.05
+nameL.TextSize = 10.5
 nameL.Font = Enum.Font.GothamBold
 nameL.TextXAlignment = Enum.TextXAlignment.Left
 nameL.ZIndex = 25
@@ -69,34 +81,37 @@ nameL.Parent = strip
 
 -- Версия
 local verL = Instance.new("TextLabel")
-verL.Size = UDim2.new(0, 62, 1, 0)
-verL.Position = UDim2.new(0, 84, 0, 0)
+verL.Size = UDim2.new(0, 58, 1, 0)
+verL.Position = UDim2.new(0, 96, 0, 0)
 verL.BackgroundTransparency = 1
 verL.Text = "v: 0.1 Alpha"
 verL.TextColor3 = Color3.fromRGB(255, 255, 255)
-verL.TextTransparency = 0.52
-verL.TextSize = 9
+verL.TextTransparency = 0.58
+verL.TextSize = 8.5
 verL.Font = Enum.Font.Gotham
 verL.TextXAlignment = Enum.TextXAlignment.Left
 verL.ZIndex = 25
 verL.Parent = strip
 
--- Разделитель
-local div = Instance.new("Frame")
-div.Size = UDim2.new(0, 1, 0, 14)
-div.Position = UDim2.new(0, 148, 0.5, -7)
-div.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-div.BackgroundTransparency = 0.88
-div.BorderSizePixel = 0
-div.ZIndex = 25
-div.Parent = strip
+-- Разделитель 1
+local function mkDiv(x)
+    local d = Instance.new("Frame")
+    d.Size = UDim2.new(0, 1, 0, 12)
+    d.Position = UDim2.new(0, x, 0.5, -6)
+    d.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    d.BackgroundTransparency = 0.88
+    d.BorderSizePixel = 0
+    d.ZIndex = 25
+    d.Parent = strip
+end
+mkDiv(156)
 
 -- FPS
 local fpsL = Instance.new("TextLabel")
-fpsL.Size = UDim2.new(0, 32, 1, 0)
-fpsL.Position = UDim2.new(0, 152, 0, 0)
+fpsL.Size = UDim2.new(0, 30, 1, 0)
+fpsL.Position = UDim2.new(0, 159, 0, 0)
 fpsL.BackgroundTransparency = 1
-fpsL.Text = "--fps"
+fpsL.Text = "--"
 fpsL.TextColor3 = Color3.fromRGB(147, 200, 255)
 fpsL.TextSize = 9
 fpsL.Font = Enum.Font.GothamBold
@@ -104,16 +119,14 @@ fpsL.TextXAlignment = Enum.TextXAlignment.Left
 fpsL.ZIndex = 25
 fpsL.Parent = strip
 
-local div2 = div:Clone()
-div2.Position = UDim2.new(0, 183, 0.5, -7)
-div2.Parent = strip
+mkDiv(188)
 
 -- Пинг
 local pingL = Instance.new("TextLabel")
 pingL.Size = UDim2.new(0, 30, 1, 0)
-pingL.Position = UDim2.new(0, 186, 0, 0)
+pingL.Position = UDim2.new(0, 191, 0, 0)
 pingL.BackgroundTransparency = 1
-pingL.Text = "--ms"
+pingL.Text = "--"
 pingL.TextColor3 = Color3.fromRGB(94, 234, 212)
 pingL.TextSize = 9
 pingL.Font = Enum.Font.GothamBold
@@ -123,9 +136,9 @@ pingL.Parent = strip
 
 -- ====== ПАНЕЛЬ ======
 local panel = Instance.new("Frame")
-panel.Size = UDim2.new(0, 270, 0, 180)
-panel.Position = UDim2.new(0.5, -135, 0.5, -90)
-panel.BackgroundColor3 = Color3.fromRGB(9, 8, 18)
+panel.Size = UDim2.new(0, 268, 0, 200)
+panel.Position = UDim2.new(0.5, -134, 0.5, -100)
+panel.BackgroundColor3 = Color3.fromRGB(8, 7, 16)
 panel.BorderSizePixel = 0
 panel.ZIndex = 15
 panel.Visible = false
@@ -135,157 +148,312 @@ panel.ClipsDescendants = true
 panel.Parent = gui
 Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 16)
 
+local pStroke = Instance.new("UIStroke", panel)
+pStroke.Color = Color3.fromRGB(255,255,255)
+pStroke.Transparency = 0.86
+pStroke.Thickness = 0.8
+
+-- Сияние панели
 local pShine = Instance.new("Frame")
-pShine.Size = UDim2.new(1, 0, 0, 1)
-pShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-pShine.BackgroundTransparency = 0.55
+pShine.Size = UDim2.new(0.85, 0, 0, 1)
+pShine.Position = UDim2.new(0.075, 0, 0, 0)
+pShine.BackgroundColor3 = Color3.fromRGB(255,255,255)
+pShine.BackgroundTransparency = 0.5
 pShine.BorderSizePixel = 0
 pShine.ZIndex = 16
 pShine.Parent = panel
+Instance.new("UICorner", pShine).CornerRadius = UDim.new(1,0)
 
-local pGlow = Instance.new("Frame")
-pGlow.Size = UDim2.new(1, 0, 0.4, 0)
-pGlow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-pGlow.BackgroundTransparency = 0.9
-pGlow.BorderSizePixel = 0
-pGlow.ZIndex = 16
-pGlow.Parent = panel
+-- Шапка
+local pHead = Instance.new("Frame")
+pHead.Size = UDim2.new(1, 0, 0, 38)
+pHead.BackgroundTransparency = 1
+pHead.ZIndex = 16
+pHead.Parent = panel
 
--- Шапка панели
-local pTitle = Instance.new("TextLabel")
-pTitle.Size = UDim2.new(1, -50, 0, 38)
-pTitle.Position = UDim2.new(0, 14, 0, 0)
-pTitle.BackgroundTransparency = 1
-pTitle.Text = "TentixWare  ·  v: 0.1 Alpha"
-pTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-pTitle.TextTransparency = 0.1
-pTitle.TextSize = 11
-pTitle.Font = Enum.Font.GothamBold
-pTitle.TextXAlignment = Enum.TextXAlignment.Left
-pTitle.ZIndex = 20
-pTitle.Parent = panel
+local pName = Instance.new("TextLabel")
+pName.Size = UDim2.new(1, -44, 1, 0)
+pName.Position = UDim2.new(0, 14, 0, 0)
+pName.BackgroundTransparency = 1
+pName.Text = "TentixWare  ·  v: 0.1 Alpha"
+pName.TextColor3 = Color3.fromRGB(255,255,255)
+pName.TextTransparency = 0.08
+pName.TextSize = 11
+pName.Font = Enum.Font.GothamBold
+pName.TextXAlignment = Enum.TextXAlignment.Left
+pName.ZIndex = 17
+pName.Parent = pHead
 
 local xBtn = Instance.new("TextButton")
 xBtn.Size = UDim2.new(0, 22, 0, 22)
-xBtn.Position = UDim2.new(1, -30, 0, 8)
-xBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-xBtn.BackgroundTransparency = 0.9
+xBtn.Position = UDim2.new(1, -30, 0.5, -11)
+xBtn.BackgroundColor3 = Color3.fromRGB(255,255,255)
+xBtn.BackgroundTransparency = 0.91
 xBtn.Text = "✕"
-xBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-xBtn.TextTransparency = 0.4
+xBtn.TextColor3 = Color3.fromRGB(255,255,255)
+xBtn.TextTransparency = 0.35
 xBtn.TextSize = 10
 xBtn.Font = Enum.Font.GothamBold
 xBtn.BorderSizePixel = 0
-xBtn.ZIndex = 20
-xBtn.Parent = panel
-Instance.new("UICorner", xBtn).CornerRadius = UDim.new(1, 0)
+xBtn.ZIndex = 17
+xBtn.Parent = pHead
+Instance.new("UICorner", xBtn).CornerRadius = UDim.new(1,0)
 
-local pdiv = Instance.new("Frame")
-pdiv.Size = UDim2.new(1, -24, 0, 1)
-pdiv.Position = UDim2.new(0, 12, 0, 38)
-pdiv.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-pdiv.BackgroundTransparency = 0.9
-pdiv.BorderSizePixel = 0
-pdiv.ZIndex = 19
-pdiv.Parent = panel
+local headDiv = Instance.new("Frame")
+headDiv.Size = UDim2.new(1, -24, 0, 1)
+headDiv.Position = UDim2.new(0, 12, 0, 38)
+headDiv.BackgroundColor3 = Color3.fromRGB(255,255,255)
+headDiv.BackgroundTransparency = 0.9
+headDiv.BorderSizePixel = 0
+headDiv.ZIndex = 16
+headDiv.Parent = panel
 
--- ====== SPEED HACK КНОПКА ======
+-- ====== SPEED HACK ======
+local currentSpeed = 100
 local speedEnabled = false
-local SPEED = 100 -- максимальное значение для MM2
 
-local speedBtn = Instance.new("TextButton")
-speedBtn.Size = UDim2.new(1, -24, 0, 42)
-speedBtn.Position = UDim2.new(0, 12, 0, 48)
-speedBtn.BackgroundColor3 = Color3.fromRGB(20, 16, 36)
-speedBtn.BorderSizePixel = 0
-speedBtn.Text = ""
-speedBtn.ZIndex = 19
-speedBtn.Parent = panel
-Instance.new("UICorner", speedBtn).CornerRadius = UDim.new(0, 10)
-local sbS = Instance.new("UIStroke", speedBtn)
-sbS.Color = Color3.fromRGB(255, 255, 255)
-sbS.Transparency = 0.88
-sbS.Thickness = 0.5
+-- Карточка Speed
+local card = Instance.new("Frame")
+card.Size = UDim2.new(1, -24, 0, 110)
+card.Position = UDim2.new(0, 12, 0, 48)
+card.BackgroundColor3 = Color3.fromRGB(255,255,255)
+card.BackgroundTransparency = 0.96
+card.BorderSizePixel = 0
+card.ZIndex = 16
+card.Parent = panel
+Instance.new("UICorner", card).CornerRadius = UDim.new(0, 12)
+local cStroke = Instance.new("UIStroke", card)
+cStroke.Color = Color3.fromRGB(255,255,255)
+cStroke.Transparency = 0.9
+cStroke.Thickness = 0.5
 
-local sbLabel = Instance.new("TextLabel")
-sbLabel.Size = UDim2.new(1, -60, 1, 0)
-sbLabel.Position = UDim2.new(0, 14, 0, 0)
-sbLabel.BackgroundTransparency = 1
-sbLabel.Text = "Speed Hack"
-sbLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-sbLabel.TextTransparency = 0.1
-sbLabel.TextSize = 11
-sbLabel.Font = Enum.Font.GothamBold
-sbLabel.TextXAlignment = Enum.TextXAlignment.Left
-sbLabel.ZIndex = 20
-sbLabel.Parent = speedBtn
+-- Заголовок карточки
+local cardTitle = Instance.new("TextLabel")
+cardTitle.Size = UDim2.new(0.6, 0, 0, 28)
+cardTitle.Position = UDim2.new(0, 12, 0, 0)
+cardTitle.BackgroundTransparency = 1
+cardTitle.Text = "⚡ Speed Hack"
+cardTitle.TextColor3 = Color3.fromRGB(255,255,255)
+cardTitle.TextTransparency = 0.08
+cardTitle.TextSize = 11
+cardTitle.Font = Enum.Font.GothamBold
+cardTitle.TextXAlignment = Enum.TextXAlignment.Left
+cardTitle.ZIndex = 17
+cardTitle.Parent = card
 
-local sbSub = Instance.new("TextLabel")
-sbSub.Size = UDim2.new(1, -60, 0, 14)
-sbSub.Position = UDim2.new(0, 14, 1, -16)
-sbSub.BackgroundTransparency = 1
-sbSub.Text = "speed: "..SPEED
-sbSub.TextColor3 = Color3.fromRGB(255, 255, 255)
-sbSub.TextTransparency = 0.6
-sbSub.TextSize = 8.5
-sbSub.Font = Enum.Font.Gotham
-sbSub.TextXAlignment = Enum.TextXAlignment.Left
-sbSub.ZIndex = 20
-sbSub.Parent = speedBtn
+-- Значение скорости
+local speedValL = Instance.new("TextLabel")
+speedValL.Size = UDim2.new(0.4, -12, 0, 28)
+speedValL.Position = UDim2.new(0.6, 0, 0, 0)
+speedValL.BackgroundTransparency = 1
+speedValL.Text = "100"
+speedValL.TextColor3 = Color3.fromRGB(147, 200, 255)
+speedValL.TextTransparency = 0.1
+speedValL.TextSize = 13
+speedValL.Font = Enum.Font.GothamBold
+speedValL.TextXAlignment = Enum.TextXAlignment.Right
+speedValL.ZIndex = 17
+speedValL.Parent = card
 
 -- Тоггл
-local toggle = Instance.new("Frame")
-toggle.Size = UDim2.new(0, 36, 0, 18)
-toggle.Position = UDim2.new(1, -48, 0.5, -9)
-toggle.BackgroundColor3 = Color3.fromRGB(40, 35, 60)
-toggle.BorderSizePixel = 0
-toggle.ZIndex = 20
-toggle.Parent = speedBtn
-Instance.new("UICorner", toggle).CornerRadius = UDim.new(1, 0)
+local tog = Instance.new("Frame")
+tog.Size = UDim2.new(0, 34, 0, 17)
+tog.Position = UDim2.new(1, -46, 0, 6)
+tog.BackgroundColor3 = Color3.fromRGB(35, 30, 55)
+tog.BorderSizePixel = 0
+tog.ZIndex = 17
+tog.Parent = card
+Instance.new("UICorner", tog).CornerRadius = UDim.new(1,0)
 
-local toggleDot = Instance.new("Frame")
-toggleDot.Size = UDim2.new(0, 12, 0, 12)
-toggleDot.Position = UDim2.new(0, 3, 0.5, -6)
-toggleDot.BackgroundColor3 = Color3.fromRGB(160, 160, 180)
-toggleDot.BorderSizePixel = 0
-toggleDot.ZIndex = 21
-toggleDot.Parent = toggle
-Instance.new("UICorner", toggleDot).CornerRadius = UDim.new(1, 0)
+local togDot = Instance.new("Frame")
+togDot.Size = UDim2.new(0, 11, 0, 11)
+togDot.Position = UDim2.new(0, 3, 0.5, -5.5)
+togDot.BackgroundColor3 = Color3.fromRGB(120,115,140)
+togDot.BorderSizePixel = 0
+togDot.ZIndex = 18
+togDot.Parent = tog
+Instance.new("UICorner", togDot).CornerRadius = UDim.new(1,0)
 
-local TweenService = game:GetService("TweenService")
+-- Слайдер трек
+local sliderTrack = Instance.new("Frame")
+sliderTrack.Size = UDim2.new(1, -24, 0, 4)
+sliderTrack.Position = UDim2.new(0, 12, 0, 36)
+sliderTrack.BackgroundColor3 = Color3.fromRGB(255,255,255)
+sliderTrack.BackgroundTransparency = 0.88
+sliderTrack.BorderSizePixel = 0
+sliderTrack.ZIndex = 17
+sliderTrack.Parent = card
+Instance.new("UICorner", sliderTrack).CornerRadius = UDim.new(1,0)
 
-local function setSpeed(on)
+-- Слайдер заполнение
+local sliderFill = Instance.new("Frame")
+sliderFill.Size = UDim2.new(1, 0, 1, 0)
+sliderFill.BackgroundColor3 = Color3.fromRGB(147, 200, 255)
+sliderFill.BackgroundTransparency = 0.3
+sliderFill.BorderSizePixel = 0
+sliderFill.ZIndex = 18
+sliderFill.Parent = sliderTrack
+Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(1,0)
+
+-- Слайдер ручка
+local sliderKnob = Instance.new("Frame")
+sliderKnob.Size = UDim2.new(0, 14, 0, 14)
+sliderKnob.Position = UDim2.new(1, -7, 0.5, -7)
+sliderKnob.BackgroundColor3 = Color3.fromRGB(255,255,255)
+sliderKnob.BackgroundTransparency = 0.1
+sliderKnob.BorderSizePixel = 0
+sliderKnob.ZIndex = 19
+sliderKnob.Parent = sliderTrack
+Instance.new("UICorner", sliderKnob).CornerRadius = UDim.new(1,0)
+
+-- Метки слайдера
+local minL = Instance.new("TextLabel")
+minL.Size = UDim2.new(0, 30, 0, 16)
+minL.Position = UDim2.new(0, 12, 0, 44)
+minL.BackgroundTransparency = 1
+minL.Text = "16"
+minL.TextColor3 = Color3.fromRGB(255,255,255)
+minL.TextTransparency = 0.72
+minL.TextSize = 8
+minL.Font = Enum.Font.Gotham
+minL.TextXAlignment = Enum.TextXAlignment.Left
+minL.ZIndex = 17
+minL.Parent = card
+
+local maxL = Instance.new("TextLabel")
+maxL.Size = UDim2.new(0, 30, 0, 16)
+maxL.Position = UDim2.new(1, -42, 0, 44)
+maxL.BackgroundTransparency = 1
+maxL.Text = "100"
+maxL.TextColor3 = Color3.fromRGB(255,255,255)
+maxL.TextTransparency = 0.72
+maxL.TextSize = 8
+maxL.Font = Enum.Font.Gotham
+maxL.TextXAlignment = Enum.TextXAlignment.Right
+maxL.ZIndex = 17
+maxL.Parent = card
+
+-- Описание
+local speedDesc = Instance.new("TextLabel")
+speedDesc.Size = UDim2.new(1, -24, 0, 20)
+speedDesc.Position = UDim2.new(0, 12, 0, 62)
+speedDesc.BackgroundTransparency = 1
+speedDesc.Text = "Максимальная скорость без кика в MM2"
+speedDesc.TextColor3 = Color3.fromRGB(255,255,255)
+speedDesc.TextTransparency = 0.7
+speedDesc.TextSize = 8.5
+speedDesc.Font = Enum.Font.Gotham
+speedDesc.TextXAlignment = Enum.TextXAlignment.Left
+speedDesc.ZIndex = 17
+speedDesc.Parent = card
+
+-- Пресеты скорости
+local presets = {{"Норм", 50}, {"Быстро", 75}, {"Макс", 100}}
+for i, pr in ipairs(presets) do
+    local pb = Instance.new("TextButton")
+    pb.Size = UDim2.new(0, 68, 0, 22)
+    pb.Position = UDim2.new(0, 12 + (i-1)*76, 0, 82)
+    pb.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    pb.BackgroundTransparency = 0.9
+    pb.Text = pr[1].." ("..pr[2]..")"
+    pb.TextColor3 = Color3.fromRGB(255,255,255)
+    pb.TextTransparency = 0.3
+    pb.TextSize = 8.5
+    pb.Font = Enum.Font.GothamBold
+    pb.BorderSizePixel = 0
+    pb.ZIndex = 17
+    pb.Parent = card
+    Instance.new("UICorner", pb).CornerRadius = UDim.new(0, 6)
+    pb.MouseButton1Click:Connect(function()
+        currentSpeed = pr[2]
+        local pct = (currentSpeed - 16) / (100 - 16)
+        sliderFill.Size = UDim2.new(pct, 0, 1, 0)
+        sliderKnob.Position = UDim2.new(pct, -7, 0.5, -7)
+        speedValL.Text = tostring(currentSpeed)
+        if speedEnabled then
+            local char = lp.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then hum.WalkSpeed = currentSpeed end
+            end
+        end
+    end)
+end
+
+-- Логика тоггла
+local function applySpeed(on)
     speedEnabled = on
     local char = lp.Character
     if char then
         local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then
-            hum.WalkSpeed = on and SPEED or 16
-        end
+        if hum then hum.WalkSpeed = on and currentSpeed or 16 end
     end
-    TweenService:Create(toggle, TweenInfo.new(0.2), {
-        BackgroundColor3 = on and Color3.fromRGB(94,234,212) or Color3.fromRGB(40,35,60)
+    TweenService:Create(tog, TweenInfo.new(0.18), {
+        BackgroundColor3 = on and Color3.fromRGB(94,234,212) or Color3.fromRGB(35,30,55)
     }):Play()
-    TweenService:Create(toggleDot, TweenInfo.new(0.2), {
-        Position = on and UDim2.new(1,-15,0.5,-6) or UDim2.new(0,3,0.5,-6),
-        BackgroundColor3 = on and Color3.fromRGB(255,255,255) or Color3.fromRGB(160,160,180)
+    TweenService:Create(togDot, TweenInfo.new(0.18), {
+        Position = on and UDim2.new(1,-14,0.5,-5.5) or UDim2.new(0,3,0.5,-5.5),
+        BackgroundColor3 = on and Color3.fromRGB(255,255,255) or Color3.fromRGB(120,115,140)
     }):Play()
 end
 
-speedBtn.MouseButton1Click:Connect(function()
-    setSpeed(not speedEnabled)
+-- Клик по тогглу
+local togBtn = Instance.new("TextButton")
+togBtn.Size = UDim2.new(1, 0, 1, 0)
+togBtn.BackgroundTransparency = 1
+togBtn.Text = ""
+togBtn.ZIndex = 20
+togBtn.Parent = tog
+togBtn.MouseButton1Click:Connect(function()
+    applySpeed(not speedEnabled)
 end)
 
--- Возобновление скорости после смерти
+-- Слайдер логика
+local draggingSlider = false
+sliderTrack.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1
+    or i.UserInputType == Enum.UserInputType.Touch then
+        draggingSlider = true
+    end
+end)
+
+game:GetService("UserInputService").InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1
+    or i.UserInputType == Enum.UserInputType.Touch then
+        draggingSlider = false
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(i)
+    if draggingSlider and (i.UserInputType == Enum.UserInputType.MouseMovement
+    or i.UserInputType == Enum.UserInputType.Touch) then
+        local trackPos = sliderTrack.AbsolutePosition.X
+        local trackSize = sliderTrack.AbsoluteSize.X
+        local pct = math.clamp((i.Position.X - trackPos) / trackSize, 0, 1)
+        currentSpeed = math.floor(16 + pct * (100 - 16))
+        sliderFill.Size = UDim2.new(pct, 0, 1, 0)
+        sliderKnob.Position = UDim2.new(pct, -7, 0.5, -7)
+        speedValL.Text = tostring(currentSpeed)
+        if speedEnabled then
+            local char = lp.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then hum.WalkSpeed = currentSpeed end
+            end
+        end
+    end
+end)
+
+-- После смерти
 lp.CharacterAdded:Connect(function(char)
     if speedEnabled then
         task.wait(0.5)
         local hum = char:WaitForChild("Humanoid")
-        if hum then hum.WalkSpeed = SPEED end
+        if hum then hum.WalkSpeed = currentSpeed end
     end
 end)
 
--- ====== ОТКРЫТИЕ / ЗАКРЫТИЕ ======
+-- ====== ОТКРЫТИЕ ======
 local isOpen = false
 local startPos = nil
 
@@ -295,40 +463,41 @@ strip.InputBegan:Connect(function(i)
         startPos = i.Position
     end
 end)
-
 strip.InputEnded:Connect(function(i)
     if i.UserInputType == Enum.UserInputType.MouseButton1
     or i.UserInputType == Enum.UserInputType.Touch then
         if startPos and (i.Position - startPos).Magnitude < 8 then
-            isOpen = not isOpen
-            panel.Visible = isOpen
+            isOpen = not isOpen; panel.Visible = isOpen
         end
         startPos = nil
     end
 end)
+xBtn.MouseButton1Click:Connect(function() isOpen=false; panel.Visible=false end)
 
-xBtn.MouseButton1Click:Connect(function()
-    isOpen = false; panel.Visible = false
-end)
-
--- ====== АНИМАЦИЯ БЛИКА ======
+-- ====== БЛИК ======
 local bt = 0
 RunService.Heartbeat:Connect(function(dt)
-    bt += dt * 0.5
-    local x = (bt % 1.4) - 0.3
+    bt += dt * 0.45
+    local x = (bt % 1.6) - 0.25
     blik.Position = UDim2.new(x, 0, 0, 0)
 end)
 
--- ====== FPS И ПИНГ ======
-local frames, elapsed = 0, 0
+-- ====== FPS + ПИНГ ======
+local fr, el = 0, 0
 RunService.Heartbeat:Connect(function(dt)
-    frames += 1; elapsed += dt
-    if elapsed >= 0.7 then
-        local fps = math.floor(frames / elapsed)
+    fr+=1; el+=dt
+    if el >= 0.7 then
+        local fps = math.floor(fr/el)
         fpsL.Text = fps.."fps"
-        local fc = fps >= 55 and Color3.fromRGB(147,200,255)
-            or fps >= 30 and Color3.fromRGB(251,191,36)
-            or Color3.fromRGB(248,113,113)
+        fpsL.TextColor3 = fps>=55 and Color3.fromRGB(147,200,255) or fps>=30 and Color3.fromRGB(251,191,36) or Color3.fromRGB(248,113,113)
+        local ok,p = pcall(function() return math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()) end)
+        if ok then
+            pingL.Text = p.."ms"
+            pingL.TextColor3 = p<60 and Color3.fromRGB(94,234,212) or p<100 and Color3.fromRGB(251,191,36) or Color3.fromRGB(248,113,113)
+        end
+        fr=0; el=0
+    end
+end)3)
         fpsL.TextColor3 = fc
 
         local ok, ping = pcall(function()
